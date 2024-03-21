@@ -1,0 +1,13 @@
+ipykernel==6.29.0
+torch==2.2.0
+torchaudio==2.2.0
+torchvision==0.17.0
+einops==0.7.0
+transformers==4.37.2
+datasets==2.17.0
+sentencepiece==0.1.99
+sacremoses==0.1.1
+ipywidgets==8.1.2
+tensorboard==2.16.2
+pytest==8.0.2
+coverage==7.4.3
