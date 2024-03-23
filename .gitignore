@@ -1,2 +1,4 @@
 # Ignore Python cache files
 __pycache__/
+# add '.coverage' file
+.coverage
