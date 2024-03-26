@@ -37,9 +37,9 @@ def verify_args(info: ArgsInfo, **kwargs) -> Tuple[List[Verification], bool]:
     for item in info.items():
         arg: str = item[0]
         arg_info: ArgInfo = item[1]
-        level = arg_info["level"]
-        desc = arg_info["description"]
-        expected_type = arg_info["type"]
+        level = arg_info.level
+        desc = arg_info.description
+        expected_type = arg_info.type
         match level:
             case ParamLevel.REQUIRED:
                 if arg not in kwargs:

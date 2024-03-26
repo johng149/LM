@@ -5,6 +5,7 @@ from src.common.services.verification import type_mismatch_msg as typmm
 from src.common.services.verification import missing_suggested_arg_msg as miss_sugg
 from src.common.models.verification import Warning, Error
 from src.common.models.param_level import ParamLevel
+from src.common.models.args_info import ArgInfo
 from unittest.mock import patch
 from unittest import mock
 
@@ -59,11 +60,9 @@ def test_verify_args_type_mismatch_arg_optional(
     arg_name = "some_arg"
     arg_type = int
     info = {
-        arg_name: {
-            "level": ParamLevel.OPTIONAL,
-            "description": "some description",
-            "type": arg_type,
-        }
+        arg_name: ArgInfo(
+            level=ParamLevel.OPTIONAL, description="some description", type=arg_type
+        )
     }
     kwargs = {arg_name: "some_value"}
     result, hasError = verify_args(info, **kwargs)
@@ -88,11 +87,9 @@ def test_verify_args_type_mismatch_arg_suggested(
     arg_name = "some_arg"
     arg_type = int
     info = {
-        arg_name: {
-            "level": ParamLevel.SUGGESTED,
-            "description": "some description",
-            "type": arg_type,
-        }
+        arg_name: ArgInfo(
+            level=ParamLevel.SUGGESTED, description="some description", type=arg_type
+        )
     }
     kwargs = {arg_name: "some_value"}
     result, hasError = verify_args(info, **kwargs)
@@ -117,11 +114,9 @@ def test_verify_args_type_mismatch_arg_required(
     arg_name = "some_arg"
     arg_type = int
     info = {
-        arg_name: {
-            "level": ParamLevel.REQUIRED,
-            "description": "some description",
-            "type": arg_type,
-        }
+        arg_name: ArgInfo(
+            level=ParamLevel.REQUIRED, description="some description", type=arg_type
+        )
     }
     kwargs = {arg_name: "some_value"}
     result, hasError = verify_args(info, **kwargs)
@@ -146,11 +141,9 @@ def test_verify_args_missing_suggested_arg(
     arg_name = "some_arg"
     arg_type = int
     info = {
-        arg_name: {
-            "level": ParamLevel.SUGGESTED,
-            "description": "some description",
-            "type": arg_type,
-        }
+        arg_name: ArgInfo(
+            level=ParamLevel.SUGGESTED, description="some description", type=arg_type
+        )
     }
     kwargs = {}
     result, hasError = verify_args(info, **kwargs)
@@ -175,11 +168,9 @@ def test_verify_args_missing_required_arg(
     arg_name = "some_arg"
     arg_type = int
     info = {
-        arg_name: {
-            "level": ParamLevel.REQUIRED,
-            "description": "some description",
-            "type": arg_type,
-        }
+        arg_name: ArgInfo(
+            level=ParamLevel.REQUIRED, description="some description", type=arg_type
+        )
     }
     kwargs = {}
     result, hasError = verify_args(info, **kwargs)
@@ -204,11 +195,9 @@ def test_verify_args_missing_optional_arg(
     arg_name = "some_arg"
     arg_type = int
     info = {
-        arg_name: {
-            "level": ParamLevel.OPTIONAL,
-            "description": "some description",
-            "type": arg_type,
-        }
+        arg_name: ArgInfo(
+            level=ParamLevel.OPTIONAL, description="some description", type=arg_type
+        )
     }
     kwargs = {}
     result, hasError = verify_args(info, **kwargs)
@@ -232,21 +221,21 @@ def test_verify_args_successful(mock_miss_sugg, mock_typmm, mock_miss, mock_unk)
     arg_suggested_name = "some_suggested_arg"
     arg_suggested_type = float
     info = {
-        arg_optional_name: {
-            "level": ParamLevel.OPTIONAL,
-            "description": "some description",
-            "type": arg_optional_type,
-        },
-        arg_required_name: {
-            "level": ParamLevel.REQUIRED,
-            "description": "some description",
-            "type": arg_required_type,
-        },
-        arg_suggested_name: {
-            "level": ParamLevel.SUGGESTED,
-            "description": "some description",
-            "type": arg_suggested_type,
-        },
+        arg_optional_name: ArgInfo(
+            level=ParamLevel.OPTIONAL,
+            description="some description",
+            type=arg_optional_type,
+        ),
+        arg_required_name: ArgInfo(
+            level=ParamLevel.REQUIRED,
+            description="some description",
+            type=arg_required_type,
+        ),
+        arg_suggested_name: ArgInfo(
+            level=ParamLevel.SUGGESTED,
+            description="some description",
+            type=arg_suggested_type,
+        ),
     }
     kwargs = {
         arg_optional_name: 1,
