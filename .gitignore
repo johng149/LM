@@ -2,3 +2,6 @@
 __pycache__/
 # add '.coverage' file
 .coverage
+coverage.xml
+# as well as the htmlcov/ directory
+htmlcov/
