@@ -2,6 +2,7 @@ from unittest.mock import patch, MagicMock
 from unittest import mock
 from src.datasets.base.processor import Processor
 import pytest
+import json
 
 
 def test_processor_init():
@@ -63,3 +64,42 @@ def test_processor_causal():
     processor = Processor(mock_tokenizer_info)
     assert processor.causal() == None
     assert not processor.supports_causal()
+
+
+def test_processor_already_cached(fs):
+    mock_tokenizer_info = MagicMock()
+    processor = Processor(mock_tokenizer_info)
+    path = "./some_path/some_dataset_name"
+    class_name = "Processor"
+    kwargs = {}
+    fs.create_file(f"{path}/{class_name}.json", contents="{}")
+    assert processor.already_cached(path, class_name, **kwargs)
+
+
+def test_processor_not_already_cached(fs):
+    mock_tokenizer_info = MagicMock()
+    processor = Processor(mock_tokenizer_info)
+    path = "./some_path/some_dataset_name"
+    class_name = "Processor"
+    kwargs = {}
+    assert not processor.already_cached(path, class_name, **kwargs)
+
+
+def test_processor_already_cached_with_kwargs(fs):
+    mock_tokenizer_info = MagicMock()
+    processor = Processor(mock_tokenizer_info)
+    path = "./some_path/some_dataset_name"
+    class_name = "Processor"
+    kwargs = {"some_arg": "some_value"}
+    fs.create_file(f"{path}/{class_name}.json", contents=json.dumps(kwargs))
+    assert processor.already_cached(path, class_name, **kwargs)
+
+
+def test_processor_not_already_cached_incorrect_kwargs(fs):
+    mock_tokenizer_info = MagicMock()
+    processor = Processor(mock_tokenizer_info)
+    path = "./some_path/some_dataset_name"
+    class_name = "Processor"
+    kwargs = {"some_arg": "some_value"}
+    fs.create_file(f"{path}/{class_name}.json", contents="{}")
+    assert not processor.already_cached(path, class_name, **kwargs)
