@@ -29,77 +29,48 @@ def test_processor_init():
     assert processor.vocab_size == vocab_size
 
 
-@patch("src.common.services.verification.verify_args")
-def test_processor_validate_args(mock_verify_args):
-    mock_tokenizer_info = MagicMock()
-    processor = Processor(mock_tokenizer_info)
-    processor.validate_args(some_arg="some_value")
-    mock_verify_args.call_count == 1
-    mock_verify_args.call_args == mock.call({}, some_arg="some_value")
-
-
-def test_processor_process():
+def test_processor_process_helper():
     mock_tokenizer_info = MagicMock()
     processor = Processor(mock_tokenizer_info)
     with pytest.raises(NotImplementedError):
-        processor.process()
+        processor.process_helper("some_save_path")
 
 
-def test_processor_encode():
+@patch.object(Processor, "already_cached")
+@patch.object(Processor, "process_helper")
+@patch.object(Processor, "set_cache")
+def test_processor_process(mock_already_cached, mock_process_helper, mock_set_cache):
     mock_tokenizer_info = MagicMock()
     processor = Processor(mock_tokenizer_info)
-    with pytest.raises(NotImplementedError):
-        processor.encode("some_sample")
+    processor.already_cached.return_value = False
+
+    save_path = "some_save_path"
+    processor.process(save_path)
+
+    assert processor.already_cached.call_count == 1
+    assert processor.already_cached.call_args == mock.call(
+        save_path, Processor.__name__
+    )
+    assert processor.process_helper.call_count == 1
+    assert processor.process_helper.call_args == mock.call(save_path)
+    assert processor.set_cache.call_count == 1
+    assert processor.set_cache.call_args == mock.call(save_path, Processor.__name__)
 
 
-def test_processor_seq2seq():
+@patch.object(Processor, "already_cached")
+@patch.object(Processor, "process_helper")
+@patch.object(Processor, "set_cache")
+def test_processor_process2(mock_already_cached, mock_process_helper, mock_set_cache):
     mock_tokenizer_info = MagicMock()
     processor = Processor(mock_tokenizer_info)
-    assert processor.seq2seq() == None
-    assert not processor.supports_seq2seq()
+    processor.already_cached.return_value = True
 
+    save_path = "some_save_path"
+    processor.process(save_path)
 
-def test_processor_causal():
-    mock_tokenizer_info = MagicMock()
-    processor = Processor(mock_tokenizer_info)
-    assert processor.causal() == None
-    assert not processor.supports_causal()
-
-
-def test_processor_already_cached(fs):
-    mock_tokenizer_info = MagicMock()
-    processor = Processor(mock_tokenizer_info)
-    path = "./some_path/some_dataset_name"
-    class_name = "Processor"
-    kwargs = {}
-    fs.create_file(f"{path}/{class_name}.json", contents="{}")
-    assert processor.already_cached(path, class_name, **kwargs)
-
-
-def test_processor_not_already_cached(fs):
-    mock_tokenizer_info = MagicMock()
-    processor = Processor(mock_tokenizer_info)
-    path = "./some_path/some_dataset_name"
-    class_name = "Processor"
-    kwargs = {}
-    assert not processor.already_cached(path, class_name, **kwargs)
-
-
-def test_processor_already_cached_with_kwargs(fs):
-    mock_tokenizer_info = MagicMock()
-    processor = Processor(mock_tokenizer_info)
-    path = "./some_path/some_dataset_name"
-    class_name = "Processor"
-    kwargs = {"some_arg": "some_value"}
-    fs.create_file(f"{path}/{class_name}.json", contents=json.dumps(kwargs))
-    assert processor.already_cached(path, class_name, **kwargs)
-
-
-def test_processor_not_already_cached_incorrect_kwargs(fs):
-    mock_tokenizer_info = MagicMock()
-    processor = Processor(mock_tokenizer_info)
-    path = "./some_path/some_dataset_name"
-    class_name = "Processor"
-    kwargs = {"some_arg": "some_value"}
-    fs.create_file(f"{path}/{class_name}.json", contents="{}")
-    assert not processor.already_cached(path, class_name, **kwargs)
+    assert processor.already_cached.call_count == 1
+    assert processor.already_cached.call_args == mock.call(
+        save_path, Processor.__name__
+    )
+    assert processor.process_helper.call_count == 0
+    assert processor.set_cache.call_count == 0
