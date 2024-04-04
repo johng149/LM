@@ -31,7 +31,7 @@ class Processor:
         self.process_helper(save_path, **kwargs)
         self.set_cache(save_path, self.__class__.__name__, **kwargs)
 
-    def process_verify_args(self, **kwargs) -> Verification:
+    def process_verify_args(self, **kwargs) -> Optional[Verification]:
         return verify_args({}, **kwargs)
 
     def already_cached(self, path: str, class_name: str, **kwargs) -> bool:
@@ -90,7 +90,7 @@ class Processor:
             case DataloaderType.VALIDATION:
                 return dataset_path / "val"
             case _:
-                raise ValueError("Invalid DataloaderType")
+                raise ValueError(f"Invalid type: {type}")
 
     def format_cache_path(self, cache_path: str, class_name: str) -> Path:
         return Path(cache_path) / f"{class_name}.json"
