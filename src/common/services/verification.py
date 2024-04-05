@@ -45,17 +45,17 @@ def verify_args(info: ArgsInfo, **kwargs) -> Tuple[List[Verification], bool]:
                 if arg not in kwargs:
                     result.append(Error(missing_arg_msg(arg)))
                     hasError = True
-                elif not isinstance(kwargs[arg], expected_type):
+                elif not type(kwargs[arg]) == expected_type:
                     result.append(Error(type_mismatch_msg(arg, expected_type)))
                     hasError = True
             case ParamLevel.SUGGESTED:
                 if arg not in kwargs:
                     result.append(Warning(missing_suggested_arg_msg(arg)))
-                elif not isinstance(kwargs[arg], expected_type):
+                elif not type(kwargs[arg]) == expected_type:
                     result.append(Error(type_mismatch_msg(arg, expected_type)))
                     hasError = True
             case ParamLevel.OPTIONAL:
-                if arg in kwargs and not isinstance(kwargs[arg], expected_type):
+                if arg in kwargs and not type(kwargs[arg]) == expected_type:
                     result.append(Error(type_mismatch_msg(arg, expected_type)))
                     hasError = True
     return result, hasError
