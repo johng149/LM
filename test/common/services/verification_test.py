@@ -249,3 +249,30 @@ def test_verify_args_successful(mock_miss_sugg, mock_typmm, mock_miss, mock_unk)
     assert mock_typmm.call_count == 0
     assert mock_miss.call_count == 0
     assert mock_unk.call_count == 0
+
+
+@patch("src.common.services.verification.unknown_arg_msg", wraps=unk)
+@patch("src.common.services.verification.missing_arg_msg", wraps=miss)
+@patch("src.common.services.verification.type_mismatch_msg", wraps=typmm)
+@patch("src.common.services.verification.missing_suggested_arg_msg", wraps=miss_sugg)
+def test_verify_args_type_mismatch_arg_required_subtypes_strict(
+    mock_miss_sugg, mock_typmm, mock_miss, mock_unk
+):
+    arg_name = "some_arg"
+    arg_type = int
+    info = {
+        arg_name: ArgInfo(
+            level=ParamLevel.REQUIRED, description="some description", type=arg_type
+        )
+    }
+    kwargs = {arg_name: True}
+    result, hasError = verify_args(info, **kwargs)
+    assert hasError
+    assert len(result) == 1
+    assert isinstance(result[0], Error)
+    assert result[0].message == typmm(arg_name, arg_type)
+    assert mock_miss_sugg.call_count == 0
+    assert mock_typmm.call_count == 1
+    assert mock_miss.call_count == 0
+    assert mock_unk.call_count == 0
+    assert mock_typmm.call_args == mock.call(arg_name, arg_type)
