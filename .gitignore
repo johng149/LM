@@ -5,3 +5,5 @@ __pycache__/
 coverage.xml
 # as well as the htmlcov/ directory
 htmlcov/
+# ignore data cache
+data/
