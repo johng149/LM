@@ -2,6 +2,7 @@ from src.datasets.services.tiny_shakespeare import TinyShakespeareProcessor as P
 from unittest.mock import patch, MagicMock, call
 from src.tokenizers.services.available_tokenizers import available_tokenizers
 from torch import Tensor
+import torch
 from src.common.models.dataloader_type import DataloaderType
 
 
@@ -47,3 +48,24 @@ def test_process_helper(mock_load_dataset):
         call(processor.format_dataset_path(save_path, DataloaderType.TRAIN)),
         call(processor.format_dataset_path(save_path, DataloaderType.VALIDATION)),
     ]
+
+
+def test_process_collate_causal():
+    tokenizer_info = setup_tokenizer()
+    processor = Processor(tokenizer_info)
+    collate_fn = processor.collate_causal_fn()
+    batch = [
+        [1, 2, 3],
+        [4, 5, 6, 4],
+    ]
+    bos_idx = 0
+    eos_idx = -1
+    pad_idx = -2
+
+    expected_source = torch.tensor([[bos_idx, 1, 2, 3, pad_idx], [bos_idx, 4, 5, 6, 4]])
+
+    expected_target = torch.tensor([[1, 2, 3, eos_idx, pad_idx], [4, 5, 6, 4, eos_idx]])
+
+    source, target = collate_fn(batch, bos_idx, eos_idx, pad_idx)
+    assert torch.equal(source, expected_source)
+    assert torch.equal(target, expected_target)
