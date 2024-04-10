@@ -11,7 +11,7 @@ def setup_tokenizer():
     return tokenizer_info
 
 
-def test_encode():
+def test_tiny_shakespeare_encode():
     tokenizer_info = setup_tokenizer()
     processor = Processor(tokenizer_info)
     sample = {"text": "Hello World"}
@@ -25,7 +25,7 @@ def test_encode():
 
 
 @patch("src.datasets.services.tiny_shakespeare.load_dataset")
-def test_process_helper(mock_load_dataset):
+def test_tiny_shakespeare_helper(mock_load_dataset):
     mock_load_dataset_result = MagicMock()
     mock_load_dataset.return_value = mock_load_dataset_result
     mock_load_dataset_result.map.return_value = mock_load_dataset_result
@@ -50,7 +50,7 @@ def test_process_helper(mock_load_dataset):
     ]
 
 
-def test_process_collate_causal():
+def test_tiny_shakespeare_collate_causal():
     tokenizer_info = setup_tokenizer()
     processor = Processor(tokenizer_info)
     collate_fn = processor.collate_causal_fn()
@@ -69,3 +69,51 @@ def test_process_collate_causal():
     source, target = collate_fn(batch, bos_idx, eos_idx, pad_idx)
     assert torch.equal(source, expected_source)
     assert torch.equal(target, expected_target)
+
+
+@patch("src.datasets.services.tiny_shakespeare.load_from_disk")
+def test_tiny_shakespeare_causal(mock_load_from_disk):
+    max_length = 10
+    mock_raw = {"text_encoded": [torch.arange(max_length)]}
+    batch_size = 2
+    kwargs = {
+        "batch_size": batch_size,
+        "max_length": max_length,
+    }
+    mock_load_from_disk.return_value = mock_raw
+    tokenizer_info = setup_tokenizer()
+    some_dataset_path = "some/path"
+    processor = Processor(tokenizer_info)
+    t = DataloaderType.TRAIN
+    dataloader = processor.causal(some_dataset_path, t, **kwargs)
+    assert dataloader is not None
+
+    sample = next(iter(dataloader))
+    source, target = sample
+
+    # since the dataloader passes in an index to the dataset to
+    # produce a sequence, and we don't have access to the sequence
+    # we can't say for certain what the output will be, however,
+    # we can test for properties that should hold true
+    assert source.shape[0] == kwargs["batch_size"]
+    assert target.shape[0] == kwargs["batch_size"]
+    assert source.shape[1] == target.shape[1]
+    assert source.shape[1] >= 1
+
+    # we check that across the sequence dimension, tensors
+    # are monotonic increasing (except for special tokens)
+    pad_idx = tokenizer_info.pad_idx
+    bos_idx = tokenizer_info.bos_idx
+    eos_idx = tokenizer_info.eos_idx
+    shorted_source = source[:, :-1]
+    shorted_target = target[:, :-1]
+    source_is_pad = shorted_source == pad_idx
+    source_is_bos = shorted_source == bos_idx
+    source_is_eos = shorted_source == eos_idx
+    target_is_pad = shorted_target == pad_idx
+    target_is_bos = shorted_target == bos_idx
+    target_is_eos = shorted_target == eos_idx
+    source_diff = torch.diff(source) >= 0
+    target_diff = torch.diff(target) >= 0
+    assert torch.all(source_is_pad | source_is_bos | source_is_eos | source_diff)
+    assert torch.all(target_is_pad | target_is_bos | target_is_eos | target_diff)
