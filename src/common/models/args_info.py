@@ -8,5 +8,14 @@ class ArgInfo:
         self.description = description
         self.type = type
 
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, ArgInfo):
+            return False
+        return (
+            self.level == value.level
+            and self.description == value.description
+            and self.type == value.type
+        )
+
 
 ArgsInfo = TypedDict("ArgsInfo", {str: ArgInfo})
