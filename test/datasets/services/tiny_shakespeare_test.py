@@ -4,6 +4,8 @@ from src.tokenizers.services.available_tokenizers import available_tokenizers
 from torch import Tensor
 import torch
 from src.common.models.dataloader_type import DataloaderType
+from src.common.models.args_info import ArgInfo
+from src.common.models.param_level import ParamLevel
 
 
 def setup_tokenizer():
@@ -117,3 +119,29 @@ def test_tiny_shakespeare_causal(mock_load_from_disk):
     target_diff = torch.diff(target) >= 0
     assert torch.all(source_is_pad | source_is_bos | source_is_eos | source_diff)
     assert torch.all(target_is_pad | target_is_bos | target_is_eos | target_diff)
+
+
+@patch("src.datasets.services.tiny_shakespeare.verify_args")
+def test_tiny_shakespeare_causal_verify_args(mock_verify_args):
+    tokenizer_info = setup_tokenizer()
+    processor = Processor(tokenizer_info)
+    args = {
+        "some_arg": "some_value",
+        "some_other_arg": 3,
+        "some_bool": True,
+    }
+    expected_argsInfo = {
+        "batch_size": ArgInfo(
+            level=ParamLevel.REQUIRED,
+            type=int,
+            description="Batch size for the dataloader",
+        ),
+        "max_length": ArgInfo(
+            level=ParamLevel.REQUIRED,
+            type=int,
+            description="Max length of sequence used to train the model",
+        ),
+    }
+    processor.causal_verify_args(**args)
+    assert mock_verify_args.call_count == 1
+    assert mock_verify_args.call_args == call(expected_argsInfo, **args)
