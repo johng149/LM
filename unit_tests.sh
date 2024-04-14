@@ -31,7 +31,7 @@ while getopts "vba:" opt; do
 done
 
 # Run the tests
-if [ "$verbose" -eq 1]; then
+if [ "$verbose" -eq 1 ]; then
     coverage run -m pytest -v
 else
     coverage run -m pytest
