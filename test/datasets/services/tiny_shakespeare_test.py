@@ -76,7 +76,7 @@ def test_tiny_shakespeare_collate_causal():
 @patch("src.datasets.services.tiny_shakespeare.load_from_disk")
 def test_tiny_shakespeare_causal(mock_load_from_disk):
     max_length = 10
-    mock_raw = {"text_encoded": [torch.arange(max_length)]}
+    mock_raw = {"text_encoded": [torch.arange(max_length).tolist()]}
     batch_size = 2
     kwargs = {
         "batch_size": batch_size,
