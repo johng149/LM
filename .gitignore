@@ -7,3 +7,5 @@ coverage.xml
 htmlcov/
 # ignore data cache
 data/
+# ignore html for uncovered files
+uncovered/
