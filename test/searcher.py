@@ -7,7 +7,7 @@ import time
 def find_covered_files(coverage_file: str = "coverage.xml"):
     data = parse(coverage_file)
     classes = data.getElementsByTagName("class")
-    filenames = set([c.getAttribute("filename") for c in classes])
+    filenames = set(["./" + c.getAttribute("filename") for c in classes])
     return filenames
 
 
