@@ -51,3 +51,11 @@ fi
 if [ "$open_browser" == "y" ]; then
     xdg-open htmlcov/index.html
 fi
+
+# Open uncovered/uncovered.html in default browser after confirming user wants to do so
+if [ "$ask_open_browser" -eq 1 ]; then
+    read -p "Do you want to open the uncovered report in your default browser? (y/N) " open_browser
+fi
+if [ "$open_browser" == "y" ]; then
+    xdg-open uncovered/uncovered.html
+fi
