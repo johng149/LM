@@ -13,6 +13,7 @@ class Processor:
     def __init__(self, info: Info):
         self.info = info
         self.tokenizer = info.tokenizer
+        self.tokenizer_name = info.tokenizer_name
         self.pad_idx = info.pad_idx
         self.bos_idx = info.bos_idx
         self.eos_idx = info.eos_idx
@@ -43,13 +44,34 @@ class Processor:
             return False
         with open(expected_path, "r") as f:
             expected_kwargs = json.load(f)
-        return expected_kwargs == kwargs
+        return expected_kwargs == self.format_kwargs(**kwargs)
 
     def set_cache(self, path: str, class_name: str, **kwargs):
         # we save the kwargs as a json file at the specified path
         expected_path = self.format_cache_path(path, class_name)
         with open(expected_path, "w") as f:
-            json.dump(kwargs, f)
+            json.dump(self.format_kwargs(**kwargs), f)
+
+    def format_kwargs(self, **kwargs) -> dict:
+        """
+        Given a set of kwargs, it returns a dictionary with the
+        given kwargs as well as information about the tokenizer
+        that was used to initialize the processor.
+
+        @param kwargs: the kwargs to be formatted
+        @return: the formatted kwargs
+        """
+        return {
+            "kwargs": kwargs,
+            "tokenizer_info": {
+                "tokenizer_name": self.tokenizer_name,
+                "pad_idx": self.pad_idx,
+                "bos_idx": self.bos_idx,
+                "eos_idx": self.eos_idx,
+                "mask_idx": self.mask_idx,
+                "vocab_size": self.vocab_size,
+            },
+        }
 
     def encode(self, sample):
         raise NotImplementedError

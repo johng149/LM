@@ -130,14 +130,32 @@ def test_processor_already_cached_miss_incorrect_kwargs(fs: FakeFilesystem):
 
 def test_processor_already_cached_hit(fs: FakeFilesystem):
     mock_tokenizer_info = MagicMock()
+    mock_tokenizer_info.tokenizer_name = "some_tokenizer_name"
+    mock_tokenizer_info.pad_idx = 0
+    mock_tokenizer_info.bos_idx = 1
+    mock_tokenizer_info.eos_idx = 2
+    mock_tokenizer_info.mask_idx = 3
+    mock_tokenizer_info.vocab_size = 4
+    # set mock_tokenizer_info's properties
     processor = Processor(mock_tokenizer_info)
 
     path = "some_path"
     class_name = "some_class"
     kwargs = {"some": "kwargs"}
+    saved_kwargs = {
+        "kwargs": kwargs,
+        "tokenizer_info": {
+            "tokenizer_name": mock_tokenizer_info.tokenizer_name,
+            "pad_idx": mock_tokenizer_info.pad_idx,
+            "bos_idx": mock_tokenizer_info.bos_idx,
+            "eos_idx": mock_tokenizer_info.eos_idx,
+            "mask_idx": mock_tokenizer_info.mask_idx,
+            "vocab_size": mock_tokenizer_info.vocab_size,
+        },
+    }
 
     file_path = processor.format_cache_path(path, class_name)
-    fs.create_file(str(file_path), contents=json.dumps(kwargs))
+    fs.create_file(str(file_path), contents=json.dumps(saved_kwargs))
 
     result = processor.already_cached(path, class_name, **kwargs)
     assert result
@@ -207,11 +225,28 @@ def test_processor_already_cached_hit2(fs: FakeFilesystem):
 
 def test_processor_set_cache(fs: FakeFilesystem):
     mock_tokenizer_info = MagicMock()
+    mock_tokenizer_info.tokenizer_name = "some_tokenizer_name"
+    mock_tokenizer_info.pad_idx = 0
+    mock_tokenizer_info.bos_idx = 1
+    mock_tokenizer_info.eos_idx = 2
+    mock_tokenizer_info.mask_idx = 3
+    mock_tokenizer_info.vocab_size = 4
     processor = Processor(mock_tokenizer_info)
 
     path = "some_path"
     class_name = "some_class"
     kwargs = {"some": "kwargs"}
+    expected_loaded = {
+        "kwargs": kwargs,
+        "tokenizer_info": {
+            "tokenizer_name": mock_tokenizer_info.tokenizer_name,
+            "pad_idx": mock_tokenizer_info.pad_idx,
+            "bos_idx": mock_tokenizer_info.bos_idx,
+            "eos_idx": mock_tokenizer_info.eos_idx,
+            "mask_idx": mock_tokenizer_info.mask_idx,
+            "vocab_size": mock_tokenizer_info.vocab_size,
+        },
+    }
 
     fs.create_dir(path)
 
@@ -222,7 +257,7 @@ def test_processor_set_cache(fs: FakeFilesystem):
 
     with open(file_path, "r") as f:
         saved_kwargs = json.load(f)
-        assert saved_kwargs == kwargs
+        assert saved_kwargs == expected_loaded
 
 
 def test_processor_encode():
