@@ -14,6 +14,7 @@ def tokenizer() -> Info:
 
     return Info(
         tokenizer=tokenizer,
+        tokenizer_name=name,
         pad_idx=pad_token_id,
         bos_idx=tokenizer.bos_token_id,
         eos_idx=tokenizer.eos_token_id,
