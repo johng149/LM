@@ -10,7 +10,7 @@ from src.common.models.param_level import ParamLevel
 
 def setup_tokenizer():
     tokenizer_info = available_tokenizers["gpt2"]
-    return tokenizer_info
+    return tokenizer_info()
 
 
 def test_tiny_shakespeare_encode():
