@@ -47,8 +47,11 @@ def html_report(
         f.write("<h1>Uncovered Files</h1>\n")
         f.write("<table>\n")
         f.write("<tr><th>File</th></tr>\n")
-        for file in uncovered:
-            f.write(f"<tr><td>{file}</td></tr>\n")
+        if len(uncovered) > 0:
+            for file in uncovered:
+                f.write(f"<tr><td>{file}</td></tr>\n")
+        else:
+            f.write("<tr><td>No uncovered files found</td></tr>\n")
         f.write("</table>\n")
         f.write("</body></html>\n")
 
