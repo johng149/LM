@@ -1,10 +1,11 @@
 from src.tokenizers.models.info import Info
 from torch import device
 from torch import Tensor
+from typing import Union
 
 
 class DecodingStrategy:
-    def __init__(self, info: Info, device: device):
+    def __init__(self, info: Info, device: Union[device, str]):
         self.info = info
         self.device = device
 
@@ -19,10 +20,10 @@ class DecodingStrategy:
 
 
 class AutoregressiveStrategy(DecodingStrategy):
-    def __init__(self, info: Info, device: device):
+    def __init__(self, info: Info, device: Union[device, str]):
         super().__init__(info, device)
 
 
 class DAGStrategy(DecodingStrategy):
-    def __init__(self, info: Info, device: device):
+    def __init__(self, info: Info, device: Union[device, str]):
         super().__init__(info, device)

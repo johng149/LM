@@ -1,5 +1,5 @@
 from torch import Tensor
-from src.nn.models.decoding_strat import AutoregressiveStrategy
+from src.nn.models.decoding_strat_model import AutoregressiveStrategy
 
 
 class GreedyAutoregressiveStrategy(AutoregressiveStrategy):

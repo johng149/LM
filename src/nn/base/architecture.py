@@ -1,5 +1,5 @@
 from torch.nn import Module
-from src.nn.models.decoding_strat import AutoregressiveStrategy
+from src.nn.models.decoding_strat_model import AutoregressiveStrategy
 from torch import Tensor
 
 
