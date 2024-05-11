@@ -42,7 +42,7 @@ python test/searcher.py
 REM Open htmlcov/index.html in default browser after confirming user wants to do so
 REM by default, assume no
 if "%ask_open_browser%"=="1" (
-    set /p open_browser=Open coverage report in default browser? (y/n) 
+    set /p open_browser=Open coverage report in default browser? ^(y/n^) 
 )
 if /i "%open_browser%"=="y" (
     start htmlcov\index.html
@@ -50,7 +50,7 @@ if /i "%open_browser%"=="y" (
 REM Open uncovered/uncovered.html in default browser after confirming user wants to do so
 REM by default, assume no
 if "%ask_open_browser%"=="1" (
-    set /p open_browser=Open uncovered report in default browser? (y/n) 
+    set /p open_browser=Open uncovered report in default browser? ^(y/n^) 
 )
 if /i "%open_browser%"=="y" (
     start uncovered\uncovered.html
