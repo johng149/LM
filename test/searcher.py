@@ -7,7 +7,9 @@ import time
 def find_covered_files(coverage_file: str = "coverage.xml"):
     data = parse(coverage_file)
     classes = data.getElementsByTagName("class")
-    filenames = set(["./" + c.getAttribute("filename") for c in classes])
+    filenames = set(
+        [os.path.normpath("./" + c.getAttribute("filename")) for c in classes]
+    )
     return filenames
 
 
@@ -29,6 +31,7 @@ def find_uncovered_files(
                 ext = get_extension(f)
                 if ext in targets:
                     full_path = os.path.join(path, f)
+                    full_path = os.path.normpath(full_path)
                     if full_path not in covered:
                         not_covered.append(full_path)
     return not_covered
