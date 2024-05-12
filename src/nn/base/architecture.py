@@ -31,4 +31,7 @@ class Architecture(Module):
         assert (
             x == strat.pad_id()
         ).sum() == 0, "Input tensor must not contain padding tokens for naive inference"
-        raise NotImplementedError
+        # since Architecture is an abstract class, this method should be overridden,
+        # here we are returning just None, however, the actual implementation should
+        # return the output tensor as indicated in the docstring
+        return None

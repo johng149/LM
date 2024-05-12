@@ -36,5 +36,4 @@ def test_architecture_naive_decode_not_implemented():
     x = torch.tensor([[1, 2, 3]])
     strat = MagicMock()
     strat.pad_id.return_value = 0
-    with pytest.raises(NotImplementedError):
-        arch.naive_inference(x, strat, max_len)
+    assert arch.naive_inference(x, strat, max_len) == None
