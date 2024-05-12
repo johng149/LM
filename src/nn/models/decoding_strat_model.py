@@ -23,6 +23,17 @@ class AutoregressiveStrategy(DecodingStrategy):
     def __init__(self, info: Info, device: Union[device, str]):
         super().__init__(info, device)
 
+    def decode(self, output: Tensor) -> Tensor:
+        """
+        This is more specific than a generic decoding strategy,
+        it must be that the output tensor's batch dimension
+        is equal to the output tensor's batch dimension.
+
+        @param output: the output tensor, shape (batch_size, vocab_size)
+        @return: the decoded tensor, shape (batch_size,)
+        """
+        raise NotImplementedError()
+
 
 class DAGStrategy(DecodingStrategy):
     def __init__(self, info: Info, device: Union[device, str]):

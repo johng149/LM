@@ -7,4 +7,6 @@ class GreedyAutoregressiveStrategy(AutoregressiveStrategy):
         super().__init__(info, device)
 
     def decode(self, output: Tensor):
-        return output.argmax(dim=-1)
+        batch_size, vocab_size = output.shape
+        greedy = output.argmax(dim=-1)
+        return greedy.reshape(batch_size, -1)
