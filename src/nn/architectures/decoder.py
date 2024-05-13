@@ -1,7 +1,9 @@
 import torch
+from src.nn.models.decoding_strat_model import AutoregressiveStrategy
 from src.nn.base.transformer import TransformerBlock
 from src.nn.base.embedding import StableEmbedding
 from src.nn.base.architecture import Architecture
+from torch import Tensor
 
 
 class Decoder(Architecture):
@@ -35,8 +37,23 @@ class Decoder(Architecture):
     def forward(self, x, mask=None):
         batch_size, seq_len = x.shape
         x = self.embedding(x) + self.pos_embedding(torch.arange(seq_len).to(x.device))
-        print(x.shape)
         for layer in self.layers:
             x = layer(x, mask=mask)
         x = self.norm(x)
         return self.classifier(x)
+
+    def naive_inference(
+        self, x: Tensor, strat: AutoregressiveStrategy, max_len: int
+    ) -> Tensor:
+        super().naive_inference(x, strat, max_len)
+        batch_size, seq_len = x.shape
+        for i in range(max_len):
+            mask = torch.tril(torch.ones(seq_len, seq_len)).bool()
+            # since model has limited positional encoding, we take
+            # a slice of the input tensor
+            x_slice = x[:, -self.max_len :]
+            logits = self.forward(x_slice, mask)
+            last_logits = logits[:, -1, :]
+            next_token = strat.decode(last_logits)
+            x = torch.cat([x, next_token], dim=-1)
+        return x
