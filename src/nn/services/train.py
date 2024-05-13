@@ -76,6 +76,12 @@ def test_step(
     return loss.item()
 
 
+# pytest considers any function starting with test_ as a test function
+# however, we don't want to run this function as a test
+# so we set __test__ to False
+test_step.__test__ = False
+
+
 def train(
     model: Architecture,
     optimizer: Optimizer,
