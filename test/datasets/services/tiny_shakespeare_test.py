@@ -65,9 +65,36 @@ def test_tiny_shakespeare_collate_causal():
     pad_idx = -2
 
     expected_source = torch.tensor([[bos_idx, 1, 2, 3, pad_idx], [bos_idx, 4, 5, 6, 4]])
-
     expected_target = torch.tensor([[1, 2, 3, eos_idx, pad_idx], [4, 5, 6, 4, eos_idx]])
 
+    source, target = collate_fn(batch, bos_idx, eos_idx, pad_idx)
+    assert torch.equal(source, expected_source)
+    assert torch.equal(target, expected_target)
+
+
+def test_tiny_shakespeare_collate_causal_same_len():
+    tokenizer_info = setup_tokenizer()
+    processor = Processor(tokenizer_info)
+    collate_fn = processor.collate_causal_fn()
+    batch = [
+        [1, 2, 3],
+        [4, 5, 6],
+    ]
+    bos_idx = 0
+    eos_idx = -1
+    pad_idx = -2
+    expected_source = torch.tensor(
+        [
+            [bos_idx, 1, 2, 3],
+            [bos_idx, 4, 5, 6],
+        ]
+    )
+    expected_target = torch.tensor(
+        [
+            [1, 2, 3, eos_idx],
+            [4, 5, 6, eos_idx],
+        ]
+    )
     source, target = collate_fn(batch, bos_idx, eos_idx, pad_idx)
     assert torch.equal(source, expected_source)
     assert torch.equal(target, expected_target)
