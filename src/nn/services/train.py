@@ -7,11 +7,22 @@ from typing import Optional, Callable, Union
 from torch.utils.data import DataLoader
 from torch import device
 from tqdm.auto import tqdm
+from torch import Tensor
 
 
 def move_to_device(data, device: Union[str, device]):
-    assert isinstance(data, list) or isinstance(data, tuple)
-    return [d.to(device) for d in data]
+    assert (
+        isinstance(data, list)
+        or isinstance(data, tuple)
+        or isinstance(data, Tensor)
+        or isinstance(data, dict)
+    )
+    if isinstance(data, list) or isinstance(data, tuple):
+        return [d.to(device) for d in data]
+    elif isinstance(data, dict):
+        return {k: v.to(device) for k, v in data.items()}
+    else:
+        return data.to(device)
 
 
 def save_checkpoint(
@@ -116,6 +127,9 @@ def train(
     and that the last element of the tuple or list is the target used in loss function.
     It also assumes that model has already been moved to the specified device
     """
+    # we first set epoch to seen_epochs in the event that training is
+    # interrupted before the for loop starts, so we still have
+    # the epoch variable available to use in save_checkpoint
     epoch = seen_epochs
     try:
         train_iter = iter(train_loader)
@@ -128,6 +142,8 @@ def train(
                 data = next(train_iter)
             data = move_to_device(data, device)
             x, y = data[:-1], data[-1]
+            if (isinstance(x, list) or isinstance(x, tuple)) and len(x) == 1:
+                x = x[0]
             loss = train_step(
                 model,
                 optimizer,
@@ -151,6 +167,8 @@ def train(
                     data = next(test_iter)
                 data = move_to_device(data, device)
                 x, y = data[:-1], data[-1]
+                if (isinstance(x, list) or isinstance(x, tuple)) and len(x) == 1:
+                    x = x[0]
                 test_loss = test_step(model, loss_fn, x, y, writer, epoch)
     except KeyboardInterrupt:
         save_checkpoint(model, optimizer, checkpoint_path, epoch)
