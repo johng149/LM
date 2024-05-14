@@ -56,16 +56,22 @@ class TinyShakespeareProcessor(Processor):
         return collate_fn
 
     def causal(
-        self, dataset_path: str, type: DataloaderType, **kwargs
+        self,
+        dataset_path: str,
+        type: DataloaderType,
+        batch_size: int,
+        max_length: int,
+        **kwargs
     ) -> DataLoader | None:
         path = self.format_dataset_path(dataset_path, type)
-        batch_size = kwargs["batch_size"]
-        max_length = kwargs["max_length"]
 
         class DataTransform(Dataset):
             def __init__(self, dataset_path: str, max_length: int):
                 self.path = dataset_path
-                self.max_length = max_length
+                # we have to subtract max length by one here to account for
+                # the fact that we are adding the bos / eos token during
+                # collation
+                self.max_length = max_length - 1
                 self.raw = load_from_disk(self.path)
 
             def __len__(self):

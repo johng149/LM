@@ -103,7 +103,7 @@ def test_tiny_shakespeare_collate_causal_same_len():
 @patch("src.datasets.services.tiny_shakespeare.load_from_disk")
 def test_tiny_shakespeare_causal(mock_load_from_disk):
     max_length = 10
-    mock_raw = {"text_encoded": [torch.arange(max_length).tolist()]}
+    mock_raw = {"text_encoded": [torch.arange(max_length * 2).tolist()]}
     batch_size = 2
     kwargs = {
         "batch_size": batch_size,
@@ -136,6 +136,7 @@ def test_tiny_shakespeare_causal(mock_load_from_disk):
     assert target.shape[0] == kwargs["batch_size"]
     assert source.shape[1] == target.shape[1]
     assert source.shape[1] >= 1
+    assert max_length >= source.shape[1]
 
     # we check that across the sequence dimension, tensors
     # are monotonic increasing (except for special tokens)
