@@ -8,6 +8,17 @@ from torch.utils.data import DataLoader
 from torch import device
 from tqdm.auto import tqdm
 from torch import Tensor
+import os
+
+
+def ensure_dir_exists(path: str):
+    """
+    Given a path to a directory or file, ensure that the
+    directory / parent directories exist. If the directory
+    already exists, do nothing.
+    """
+    dirpath = os.path.dirname(path)
+    os.makedirs(dirpath, exist_ok=True)
 
 
 def move_to_device(data, device: Union[str, device]):
@@ -118,7 +129,7 @@ def train(
     @param train_loader: The DataLoader for training
     @param test_loader: The DataLoader for testing
     @param writer: The SummaryWriter to log to
-    @param checkpoint_path: The path to save checkpoints to
+    @param checkpoint_path: The path to save checkpoints to, such as "/path/to/checkpoint.pth"
     @param save_every: Save a checkpoint every n epochs
     @param test_every: Test the model every n epochs
     @param device: The device to train on
@@ -130,6 +141,7 @@ def train(
     # we first set epoch to seen_epochs in the event that training is
     # interrupted before the for loop starts, so we still have
     # the epoch variable available to use in save_checkpoint
+    ensure_dir_exists(checkpoint_path)
     epoch = seen_epochs
     try:
         train_iter = iter(train_loader)
