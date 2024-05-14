@@ -78,3 +78,79 @@ def test_train_step(mock_save_checkpoint):
     assert mock_save_checkpoint.call_args == mock.call(
         model, optimizer, checkpoint_path, global_step
     )
+    assert writer.add_scalar.call_count == 1
+    assert writer.add_scalar.call_args == mock.call(
+        "Train/Loss", expected_loss, global_step
+    )
+
+
+def test_test_step():
+    input_shape = 10
+    output_shape = 1
+    model = MockArchitecture(input_shape, output_shape)
+    loss_fn = MSELoss()
+    x = torch.randn(10, input_shape)
+    y = torch.randn(10, output_shape)
+    with torch.no_grad():
+        expected_loss: float = loss_fn(model(x), y).item()
+    writer = MagicMock()
+    global_step = 3
+    loss: float = test_step(
+        model,
+        loss_fn,
+        x,
+        y,
+        writer=writer,
+        global_step=global_step,
+    )
+    eps = 1e-6
+    assert abs(loss - expected_loss) < eps
+    assert writer.add_scalar.call_count == 1
+    assert writer.add_scalar.call_args == mock.call(
+        "Test/Loss", expected_loss, global_step
+    )
+
+
+@patch("src.nn.services.train.save_checkpoint")
+@patch("src.nn.services.train.move_to_device", wraps=move_to_device)
+def test_train(
+    mock_move_to_device,
+    mock_save_checkpoint,
+):
+    input_shape = 10
+    output_shape = 1
+    model = MockArchitecture(input_shape, output_shape)
+    optimizer = SGD(model.parameters(), lr=0.1)
+    loss_fn = MSELoss()
+    seen_epochs = 0
+    target_epochs = 6
+    train_x, train_y = torch.randn(10, input_shape), torch.randn(10, output_shape)
+    train_loader = DataLoader(list(zip(train_x, train_y)), batch_size=10)
+    test_x, test_y = torch.randn(10, input_shape), torch.randn(10, output_shape)
+    test_loader = DataLoader(list(zip(test_x, test_y)), batch_size=10)
+    writer = MagicMock()
+    checkpoint_path = "mock_checkpoint_path/model.pt"
+    save_every = 3
+    test_every = 2
+    device = "cpu"
+    train(
+        model,
+        optimizer,
+        loss_fn,
+        seen_epochs,
+        target_epochs,
+        train_loader,
+        test_loader,
+        writer,
+        checkpoint_path,
+        save_every,
+        test_every,
+        device,
+    )
+    assert mock_move_to_device.call_count == 9
+    # 3 save checkpoints, 2 from the loop, 1 from
+    # the finally block
+    assert mock_save_checkpoint.call_count == 3
+    assert mock_save_checkpoint.call_args == mock.call(
+        model, optimizer, checkpoint_path, 5
+    )
