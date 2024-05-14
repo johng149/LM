@@ -113,7 +113,9 @@ def test_test_step():
 
 @patch("src.nn.services.train.save_checkpoint")
 @patch("src.nn.services.train.move_to_device", wraps=move_to_device)
+@patch("src.nn.services.train.ensure_dir_exists")
 def test_train(
+    mock_ensure_dir_exists,
     mock_move_to_device,
     mock_save_checkpoint,
 ):
@@ -147,6 +149,8 @@ def test_train(
         test_every,
         device,
     )
+    assert mock_ensure_dir_exists.call_count == 1
+    assert mock_ensure_dir_exists.call_args == mock.call(checkpoint_path)
     assert mock_move_to_device.call_count == 9
     # 3 save checkpoints, 2 from the loop, 1 from
     # the finally block
