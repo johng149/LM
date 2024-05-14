@@ -9,3 +9,7 @@ htmlcov/
 data/
 # ignore html for uncovered files
 uncovered/
+# ignore all files matching *.tfevents.*
+*.tfevents.*
+# ignore checkpoint files
+*.pt
