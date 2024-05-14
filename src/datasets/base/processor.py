@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 from typing import Optional, Callable
 import json
 from pathlib import Path
+from torch import Tensor
+from typing import List, Tuple
 
 
 class Processor:
@@ -98,7 +100,20 @@ class Processor:
     def causal_verify_args(self, **kwargs) -> Verification:
         return verify_args({}, **kwargs)
 
-    def collate_causal_fn(self) -> Optional[Callable]:
+    def collate_causal_fn(
+        self,
+    ) -> Optional[Callable[[List[List[int]], int, int, int], Tuple[Tensor, Tensor]]]:
+        """
+        For datasets that support causal language modeling, this
+        function should return a collate function that given
+        batch (a list of lists of integers),
+        bos_idx (the index of the beginning of sequence token),
+        eos_idx (the index of the end of sequence token),
+        pad_idx (the index of the padding token),
+        return a tuple of tensors (source, target) where source
+        is the input to the model and target is the expected
+        output of the model.
+        """
         return None
 
     def supports_causal(self) -> bool:

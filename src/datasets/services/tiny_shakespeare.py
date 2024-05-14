@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from src.common.models.dataloader_type import DataloaderType
 from src.datasets.base.processor import Processor
 from datasets import load_dataset, load_from_disk
-from typing import List, Callable, Any
+from typing import List, Callable, Any, Tuple
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
@@ -32,10 +32,12 @@ class TinyShakespeareProcessor(Processor):
         train.save_to_disk(train_path)
         val.save_to_disk(val_path)
 
-    def collate_causal_fn(self) -> Callable[[List[List[int]], int, int, int], Tensor]:
+    def collate_causal_fn(
+        self,
+    ) -> Callable[[List[List[int]], int, int, int], Tuple[Tensor, Tensor]]:
         def collate_fn(
             batch: List[List[int]], bos_idx: int, eos_idx: int, pad_idx: int
-        ) -> Tensor:
+        ) -> Tuple[Tensor, Tensor]:
             bos_idx = torch.tensor([bos_idx], dtype=torch.long)
             eos_idx = torch.tensor([eos_idx], dtype=torch.long)
             combined = [torch.cat([bos_idx, torch.tensor(x), eos_idx]) for x in batch]

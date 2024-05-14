@@ -118,7 +118,15 @@ def test_tiny_shakespeare_causal(mock_load_from_disk):
     assert dataloader is not None
 
     sample = next(iter(dataloader))
-    source, target = sample
+    source, target = sample[:-1], sample[-1]
+
+    assert isinstance(source, list) or isinstance(source, tuple)
+    assert len(source) == 1
+
+    source = source[0]
+
+    assert isinstance(target, Tensor)
+    assert isinstance(source, Tensor)
 
     # since the dataloader passes in an index to the dataset to
     # produce a sequence, and we don't have access to the sequence
