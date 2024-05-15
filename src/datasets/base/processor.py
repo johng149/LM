@@ -93,7 +93,7 @@ class Processor:
         return self.collate_seq2seq_fn() is not None
 
     def causal(
-        self, dataset_path: str, type: DataloaderType, **kwargs
+        self, dataset_path: str, type: DataloaderType, batch_size: int, **kwargs
     ) -> Optional[DataLoader]:
         return None
 
