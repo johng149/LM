@@ -83,7 +83,7 @@ class Processor:
     ) -> Optional[DataLoader]:
         return None
 
-    def seq2seq_verify_args(self, **kwargs) -> Verification:
+    def seq2seq_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
         return verify_args({}, **kwargs)
 
     def collate_seq2seq_fn(self) -> Optional[Callable]:
@@ -97,7 +97,7 @@ class Processor:
     ) -> Optional[DataLoader]:
         return None
 
-    def causal_verify_args(self, **kwargs) -> Verification:
+    def causal_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
         return verify_args({}, **kwargs)
 
     def collate_causal_fn(
