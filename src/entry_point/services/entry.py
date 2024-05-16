@@ -60,20 +60,24 @@ def load(
     if not dataset_supports_model:
         raise ValueError(f"Model type {model_type} not supported by dataset {dataset}")
 
-    dataset_process_args_validator = model_type_to_processor_verify_args(
-        dataset, model_type
-    )
-    verifications, hasError = dataset_process_args_validator(**dataset_process_params)
+    dataset_dl_args_validator = model_type_to_processor_verify_args(dataset, model_type)
+
+    train_dl_params = jd["train_dl_params"]
+    test_dl_params = jd.get("test_dl_params", None)
+
+    verifications, hasError = dataset_dl_args_validator(**train_dl_params)
     if hasError:
-        raise ValueError(f"Invalid dataset process args: {verifications}")
+        raise ValueError(f"Invalid dataset train dataloader args: {verifications}")
+
+    if test_dl_params is not None:
+        verifications, hasError = dataset_dl_args_validator(**test_dl_params)
+        if hasError:
+            raise ValueError(f"Invalid dataset test dataloader args: {verifications}")
 
     if model_type not in available_models:
         raise ValueError(f"Invalid model type: {model_type}")
 
     use_validation = jd.get("use_validation", False)
-
-    train_dl_params = jd["train_dl_params"]
-    test_dl_params = jd.get("test_dl_params", None)
 
     train_dl = model_type_to_processor_dataloader(dataset, model_type)(
         dataset_path=dataset_path, type=DataloaderType.TRAIN, **train_dl_params
@@ -87,9 +91,9 @@ def load(
         test_dl = None
 
     model_kwargs = jd["model_kwargs"]
+    model_kwargs["vocab_size"] = tokenizer.vocab_size
 
     optimizer = jd["optimizer"]
-    optmizer_path = f"torch.optim.{optimizer}"
 
     optimizer_kwargs = jd["optimizer_kwargs"]
 
@@ -102,7 +106,7 @@ def load(
     model = available_models[model_type](**model_kwargs)
     model = model.to(device)
 
-    optim_class = importlib.import_module(optmizer_path)
+    optim_class = getattr(importlib.import_module("torch.optim"), optimizer)
     optimizer = optim_class(model.parameters(), **optimizer_kwargs)
 
     l = available_loss_fns[loss_fn]
@@ -283,28 +287,11 @@ def entry(
         loss_fn=loss_fn,
         seen_epochs=seen_epochs,
         target_epochs=target_epochs,
-        train_dl=train_dl,
-        test_dl=test_dl,
+        train_loader=train_dl,
+        test_loader=test_dl,
         writer=writer,
         checkpoint_path=checkpoint_path,
         save_every=save_every,
         test_every=test_every,
         device=device,
-    )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--jd_path", type=str, required=True)
-    parser.add_argument("--save_every", type=int, required=True)
-    parser.add_argument("--test_every", type=int, required=True)
-    parser.add_argument("--device", type=str, required=True)
-    parser.add_argument("--target_epochs", type=int, required=True)
-    args = parser.parse_args()
-    entry(
-        jd_path=args.jd_path,
-        save_every=args.save_every,
-        test_every=args.test_every,
-        device=args.device,
-        target_epochs=args.target_epochs,
     )
