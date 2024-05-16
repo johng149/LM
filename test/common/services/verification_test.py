@@ -1,11 +1,14 @@
 from src.common.services.verification import verify_args
+from src.common.services.verification import verify_arg_relations
 from src.common.services.verification import unknown_arg_msg as unk
 from src.common.services.verification import missing_arg_msg as miss
 from src.common.services.verification import type_mismatch_msg as typmm
 from src.common.services.verification import missing_suggested_arg_msg as miss_sugg
+from src.common.services.verification import args_missing_msg as miss_arg
 from src.common.models.verification import Warning, Error
 from src.common.models.param_level import ParamLevel
 from src.common.models.args_info import ArgInfo
+from src.common.models.args_relation import ArgRelation
 from unittest.mock import patch
 from unittest import mock
 
@@ -276,3 +279,167 @@ def test_verify_args_type_mismatch_arg_required_subtypes_strict(
     assert mock_miss.call_count == 0
     assert mock_unk.call_count == 0
     assert mock_typmm.call_args == mock.call(arg_name, arg_type)
+
+
+def test_verify_arg_relations_empty_relations():
+    relations = {}
+    kwargs = {}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert not hasError
+    assert len(result) == 0
+
+
+def test_verify_arg_relations_required():
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relations = {
+        (arg1, arg2): ArgRelation(
+            level=ParamLevel.REQUIRED,
+            failure_msg="some failure message",
+            relation=lambda x, y: x == y,
+        )
+    }
+    kwargs = {arg1: 1, arg2: 1}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 0
+    assert not hasError
+
+
+def test_verify_arg_relations_required_fail():
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relation = ArgRelation(
+        level=ParamLevel.REQUIRED,
+        failure_msg="some failure message",
+        relation=lambda x, y: x == y,
+    )
+    relations = {(arg1, arg2): relation}
+    kwargs = {arg1: 1, arg2: 2}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 1
+    assert isinstance(result[0], Error)
+    assert hasError
+    assert result[0].message == relation.failure_msg
+
+
+@patch("src.common.services.verification.args_missing_msg", wraps=miss_arg)
+def test_verify_arg_relations_required_missing(mock_args_missing_msg):
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relation = ArgRelation(
+        level=ParamLevel.REQUIRED,
+        failure_msg="some failure message",
+        relation=lambda x, y: x == y,
+    )
+    relations = {(arg1, arg2): relation}
+    kwargs = {arg1: 1}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 1
+    assert isinstance(result[0], Error)
+    assert hasError
+    assert result[0].message == miss_arg([arg2])
+    assert mock_args_missing_msg.call_count == 1
+    assert mock_args_missing_msg.call_args == mock.call([arg2])
+
+
+def test_verify_arg_relations_suggested():
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relations = {
+        (arg1, arg2): ArgRelation(
+            level=ParamLevel.SUGGESTED,
+            failure_msg="some failure message",
+            relation=lambda x, y: x == y,
+        )
+    }
+    kwargs = {arg1: 1, arg2: 1}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 0
+    assert not hasError
+
+
+def test_verify_arg_relations_suggested_fail():
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relation = ArgRelation(
+        level=ParamLevel.SUGGESTED,
+        failure_msg="some failure message",
+        relation=lambda x, y: x == y,
+    )
+    relations = {(arg1, arg2): relation}
+    kwargs = {arg1: 1, arg2: 2}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 1
+    assert isinstance(result[0], Error)
+    assert hasError
+    assert result[0].message == relation.failure_msg
+
+
+@patch("src.common.services.verification.args_missing_msg", wraps=miss_arg)
+def test_verify_arg_relations_suggested_missing(mock_args_missing_msg):
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relation = ArgRelation(
+        level=ParamLevel.SUGGESTED,
+        failure_msg="some failure message",
+        relation=lambda x, y: x == y,
+    )
+    relations = {(arg1, arg2): relation}
+    kwargs = {arg1: 1}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 1
+    assert isinstance(result[0], Warning)
+    assert not hasError
+    assert result[0].message == miss_arg([arg2])
+    assert mock_args_missing_msg.call_count == 1
+    assert mock_args_missing_msg.call_args == mock.call([arg2])
+
+
+def test_verify_arg_relations_optional():
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relations = {
+        (arg1, arg2): ArgRelation(
+            level=ParamLevel.OPTIONAL,
+            failure_msg="some failure message",
+            relation=lambda x, y: x == y,
+        )
+    }
+    kwargs = {arg1: 1, arg2: 1}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 0
+    assert not hasError
+
+
+def test_verify_arg_relations_optional_fail():
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relation = ArgRelation(
+        level=ParamLevel.OPTIONAL,
+        failure_msg="some failure message",
+        relation=lambda x, y: x == y,
+    )
+    relations = {(arg1, arg2): relation}
+    kwargs = {arg1: 1, arg2: 2}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 1
+    assert isinstance(result[0], Error)
+    assert hasError
+    assert result[0].message == relation.failure_msg
+
+
+@patch("src.common.services.verification.args_missing_msg", wraps=miss_arg)
+def test_verify_arg_relations_optional_missing(mock_args_missing_msg):
+    arg1 = "arg1"
+    arg2 = "arg2"
+    relation = ArgRelation(
+        level=ParamLevel.OPTIONAL,
+        failure_msg="some failure message",
+        relation=lambda x, y: x == y,
+    )
+    relations = {(arg1, arg2): relation}
+    kwargs = {arg1: 1}
+    result, hasError = verify_arg_relations(relations, **kwargs)
+    assert len(result) == 0
+    assert not hasError
+    assert mock_args_missing_msg.call_count == 0
