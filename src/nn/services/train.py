@@ -76,12 +76,13 @@ def train_step(
     save_checkpoint_info_callback: Optional[Callable[[], dict]] = None,
 ) -> float:
     optimizer.zero_grad()
+    batch_size = x.size(0)
     output = model(x)
     loss = loss_fn(output, y)
     loss.backward()
     optimizer.step()
     if writer is not None:
-        writer.add_scalar("Train/Loss", loss.item(), global_step)
+        writer.add_scalar("Train/Loss", loss.item() / batch_size, global_step)
     if (
         checkpoint_path is not None
         and save_every is not None
@@ -107,10 +108,11 @@ def test_step(
     global_step: Optional[int] = None,
 ) -> float:
     with torch.no_grad():
+        batch_size = x.size(0)
         output = model(x)
         loss = loss_fn(output, y)
         if writer is not None:
-            writer.add_scalar("Test/Loss", loss.item(), global_step)
+            writer.add_scalar("Test/Loss", loss.item() / batch_size, global_step)
     return loss.item()
 
 
