@@ -166,23 +166,27 @@ def load_from_checkpoint(
     if not dataset_supports_model:
         raise ValueError(f"Model type {model_type} not supported by dataset {dataset}")
 
-    dataset_process_args_validator = model_type_to_processor_verify_args(
-        dataset, model_type
-    )
-    verifications, hasError = dataset_process_args_validator(**dataset_process_params)
+    dataset_dl_args_validator = model_type_to_processor_verify_args(dataset, model_type)
+
+    train_dl_params = jd["train_dl_params"]
+    test_dl_params = jd.get("test_dl_params", None)
+
+    verifications, hasError = dataset_dl_args_validator(**train_dl_params)
     if hasError:
         raise ValueError(f"Invalid dataset process args: {verifications}")
+
+    if test_dl_params is not None:
+        verifications, hasError = dataset_dl_args_validator(**test_dl_params)
+        if hasError:
+            raise ValueError(f"Invalid dataset process args: {verifications}")
 
     if model_type not in available_models:
         raise ValueError(f"Invalid model type: {model_type}")
 
     use_validation = jd.get("use_validation", False)
 
-    train_dl_params = jd["train_dl_params"]
-    test_dl_params = jd.get("test_dl_params", None)
-
     train_dl = model_type_to_processor_dataloader(dataset, model_type)(
-        dataset_path=dataset_path, type=DataloaderType.TRAIN**train_dl_params
+        dataset_path=dataset_path, type=DataloaderType.TRAIN, **train_dl_params
     )
 
     if use_validation:
@@ -195,7 +199,7 @@ def load_from_checkpoint(
     model_state_dict = checkpoint["model_state_dict"]
     model_kwargs = checkpoint["model_kwargs"]
     optimizer_state_dict = checkpoint["optimizer_state_dict"]
-    seen_epochs = checkpoint["seen_epochs"]
+    seen_epochs = checkpoint["global_step"]
     summary_writer_dir = checkpoint["tensorboard_dir"]
 
     writer = SummaryWriter(summary_writer_dir)
@@ -205,9 +209,8 @@ def load_from_checkpoint(
     model = model.to(device)
 
     optimizer = jd["optimizer"]
-    optmizer_path = f"torch.optim.{optimizer}"
 
-    optim_class = importlib.import_module(optmizer_path)
+    optim_class = getattr(importlib.import_module("torch.optim"), optimizer)
     optimizer = optim_class(model.parameters())
     optimizer.load_state_dict(optimizer_state_dict)
 
