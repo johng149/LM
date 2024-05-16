@@ -113,12 +113,12 @@ class Decoder(Architecture):
         self, x: Tensor, strat: AutoregressiveStrategy, max_len: int
     ) -> Tensor:
         super().naive_inference(x, strat, max_len)
-        batch_size, seq_len = x.shape
         for i in range(max_len):
-            mask = torch.tril(torch.ones(seq_len, seq_len)).bool()
             # since model has limited positional encoding, we take
             # a slice of the input tensor
             x_slice = x[:, -self.max_len :]
+            _, x_len = x_slice.shape
+            mask = torch.tril(torch.ones(x_len, x_len)).bool().unsqueeze(0).to(x.device)
             logits = self.forward(x_slice, mask)
             last_logits = logits[:, -1, :]
             next_token = strat.decode(last_logits)
