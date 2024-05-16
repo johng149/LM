@@ -42,15 +42,23 @@ def save_checkpoint(
     path: str,
     global_step: Optional[int] = None,
     tensorboard_dir: Optional[str] = None,
+    save_checkpoint_info_callback: Optional[Callable[[], dict]] = None,
 ):
+    additional_info = (
+        save_checkpoint_info_callback()
+        if save_checkpoint_info_callback is not None
+        else {}
+    )
+    info = {
+        "model_state_dict": model.state_dict(),
+        "model_kwargs": model.kwargs,
+        "optimizer_state_dict": optimizer.state_dict(),
+        "global_step": global_step,
+        tensorboard_dir: tensorboard_dir,
+    }
+    info.update(additional_info)
     torch.save(
-        {
-            "model_state_dict": model.state_dict(),
-            "model_kwargs": model.kwargs,
-            "optimizer_state_dict": optimizer.state_dict(),
-            "global_step": global_step,
-            tensorboard_dir: tensorboard_dir,
-        },
+        info,
         path,
     )
 
@@ -65,6 +73,7 @@ def train_step(
     global_step: Optional[int] = None,
     checkpoint_path: Optional[str] = None,
     save_every: Optional[int] = None,
+    save_checkpoint_info_callback: Optional[Callable[[], dict]] = None,
 ) -> float:
     optimizer.zero_grad()
     output = model(x)
@@ -78,7 +87,14 @@ def train_step(
         and save_every is not None
         and global_step % save_every == 0
     ):
-        save_checkpoint(model, optimizer, checkpoint_path, global_step)
+        save_checkpoint(
+            model,
+            optimizer,
+            checkpoint_path,
+            global_step,
+            writer.get_logdir(),
+            save_checkpoint_info_callback,
+        )
     return loss.item()
 
 
@@ -117,6 +133,7 @@ def train(
     save_every: Optional[int] = None,
     test_every: Optional[int] = None,
     device: Union[str, device] = "cpu",
+    save_checkpoint_info_callback: Optional[Callable[[], dict]] = None,
 ):
     """
     Trains given model for epochs equal to the difference between target and seen epochs.
@@ -133,6 +150,10 @@ def train(
     @param save_every: Save a checkpoint every n epochs
     @param test_every: Test the model every n epochs
     @param device: The device to train on
+    @param save_checkpoint_info_callback: A callback function that returns a dictionary
+        which will also be saved in the checkpoint file. This can be used to save additional
+        information such as those needed to resume training from a checkpoint such
+        as what dataset was used, the model type, etc.
 
     It is assumed that the dataloaders used returns tuples or lists of tensors,
     and that the last element of the tuple or list is the target used in loss function.
@@ -183,6 +204,20 @@ def train(
                     x = x[0]
                 test_loss = test_step(model, loss_fn, x, y, writer, epoch)
     except KeyboardInterrupt:
-        save_checkpoint(model, optimizer, checkpoint_path, epoch)
+        save_checkpoint(
+            model,
+            optimizer,
+            checkpoint_path,
+            epoch,
+            writer.get_logdir(),
+            save_checkpoint_info_callback,
+        )
     finally:
-        save_checkpoint(model, optimizer, checkpoint_path, epoch)
+        save_checkpoint(
+            model,
+            optimizer,
+            checkpoint_path,
+            epoch,
+            writer.get_logdir(),
+            save_checkpoint_info_callback,
+        )
