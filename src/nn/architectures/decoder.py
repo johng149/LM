@@ -113,6 +113,7 @@ class Decoder(Architecture):
         self, x: Tensor, strat: AutoregressiveStrategy, max_len: int
     ) -> Tensor:
         super().naive_inference(x, strat, max_len)
+        eos_idx = strat.info.eos_idx
         for i in range(max_len):
             # since model has limited positional encoding, we take
             # a slice of the input tensor
@@ -123,4 +124,6 @@ class Decoder(Architecture):
             last_logits = logits[:, -1, :]
             next_token = strat.decode(last_logits)
             x = torch.cat([x, next_token], dim=-1)
+            if (next_token == eos_idx).all():
+                break
         return x
