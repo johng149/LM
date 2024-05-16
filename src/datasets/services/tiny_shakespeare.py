@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from src.common.models.dataloader_type import DataloaderType
 from src.datasets.base.processor import Processor
 from datasets import load_dataset, load_from_disk
-from typing import List, Callable, Any, Tuple
+from typing import List, Callable, Any, Tuple, Optional
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
@@ -31,6 +31,9 @@ class TinyShakespeareProcessor(Processor):
         val_path = self.format_dataset_path(save_path, DataloaderType.VALIDATION)
         train.save_to_disk(train_path)
         val.save_to_disk(val_path)
+
+    def process_verify_args(self, **kwargs) -> Optional[Verification]:
+        return verify_args({}, **kwargs)
 
     def collate_causal_fn(
         self,
