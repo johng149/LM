@@ -34,7 +34,7 @@ class Processor:
         self.process_helper(save_path, **kwargs)
         self.set_cache(save_path, self.__class__.__name__, **kwargs)
 
-    def process_verify_args(self, **kwargs) -> Optional[Verification]:
+    def process_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
         return verify_args({}, **kwargs)
 
     def already_cached(self, path: str, class_name: str, **kwargs) -> bool:

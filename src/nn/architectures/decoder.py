@@ -4,6 +4,10 @@ from src.nn.base.transformer import TransformerBlock
 from src.nn.base.embedding import StableEmbedding
 from src.nn.base.architecture import Architecture
 from torch import Tensor
+from typing import List, Tuple
+from src.common.models.verification import Verification
+from src.common.models.args_info import ArgInfo
+from src.common.models.param_level import ParamLevel
 
 
 class Decoder(Architecture):
@@ -30,6 +34,15 @@ class Decoder(Architecture):
         )
         self.norm = torch.nn.LayerNorm(embed_dim)
         self.classifier = torch.nn.Linear(embed_dim, vocab_size)
+
+    def verify_init_kwargs(self, **kwargs) -> Tuple[List[Verification], bool]:
+        arg_info = {
+            "embed_dim": ArgInfo(
+                level=ParamLevel.REQUIRED,
+                description="The dimension of the embedding",
+                type=int,
+            )
+        }
 
     def init_kwargs(self) -> dict:
         return self.kwargs

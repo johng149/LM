@@ -1,6 +1,9 @@
 from torch.nn import Module
 from src.nn.models.decoding_strat_model import AutoregressiveStrategy
 from torch import Tensor
+from src.common.models.verification import Verification
+from typing import List, Tuple
+from src.common.services.verification import verify_args, verify_arg_relations
 
 
 class Architecture(Module):
@@ -13,6 +16,9 @@ class Architecture(Module):
         Returns the kwargs used to initialize the architecture.
         """
         raise NotImplementedError
+
+    def verify_init_kwargs(self, **kwargs) -> Tuple[List[Verification], bool]:
+        return verify_args({}, **kwargs)
 
     def naive_inference(
         self, x: Tensor, strat: AutoregressiveStrategy, max_len: int
