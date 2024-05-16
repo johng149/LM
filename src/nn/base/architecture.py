@@ -18,12 +18,16 @@ class Architecture(Module):
         raise NotImplementedError
 
     def verify_init_kwargs(self, **kwargs) -> Tuple[List[Verification], bool]:
-        v1, e1 = verify_args({}, **kwargs)
-        v2, e2 = verify_arg_relations({}, **kwargs)
+        v1, e1, v2, e2 = self.verify_init_kwargs_helper(**kwargs)
         if e1 or e2:
             return v1 + v2, True
         else:
             return v1 + v2, False
+
+    def verify_init_kwargs_helper(self, **kwargs):
+        v1, e1 = verify_args({}, **kwargs)
+        v2, e2 = verify_arg_relations({}, **kwargs)
+        return v1, e1, v2, e2
 
     def naive_inference(
         self, x: Tensor, strat: AutoregressiveStrategy, max_len: int

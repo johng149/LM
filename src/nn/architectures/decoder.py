@@ -7,7 +7,9 @@ from torch import Tensor
 from typing import List, Tuple
 from src.common.models.verification import Verification
 from src.common.models.args_info import ArgInfo
+from src.common.models.args_relation import ArgRelation
 from src.common.models.param_level import ParamLevel
+from src.common.services.verification import verify_args, verify_arg_relations
 
 
 class Decoder(Architecture):
@@ -35,14 +37,66 @@ class Decoder(Architecture):
         self.norm = torch.nn.LayerNorm(embed_dim)
         self.classifier = torch.nn.Linear(embed_dim, vocab_size)
 
-    def verify_init_kwargs(self, **kwargs) -> Tuple[List[Verification], bool]:
+    def verify_init_kwargs_helper(
+        self, **kwargs
+    ) -> Tuple[List[Verification], bool, List[Verification], bool]:
         arg_info = {
             "embed_dim": ArgInfo(
                 level=ParamLevel.REQUIRED,
                 description="The dimension of the embedding",
                 type=int,
-            )
+            ),
+            "num_heads": ArgInfo(
+                level=ParamLevel.REQUIRED,
+                description="The number of heads in the multihead attention",
+                type=int,
+            ),
+            "factor": ArgInfo(
+                level=ParamLevel.REQUIRED,
+                description="The factor for the dimension of the feedforward network",
+                type=int,
+            ),
+            "vocab_size": ArgInfo(
+                level=ParamLevel.REQUIRED,
+                description="The size of the vocabulary",
+                type=int,
+            ),
+            "max_len": ArgInfo(
+                level=ParamLevel.REQUIRED,
+                description="The maximum length of the input sequence",
+                type=int,
+            ),
+            "num_layers": ArgInfo(
+                level=ParamLevel.REQUIRED,
+                description="The number of layers in the transformer",
+                type=int,
+            ),
         }
+        arg_relations = {
+            ("embed_dim", "num_heads"): ArgRelation(
+                level=ParamLevel.REQUIRED,
+                relation=lambda embed_dim, num_heads: embed_dim % num_heads == 0,
+                failure_msg="Embedding dimension must be divisible by the number of heads",
+            ),
+            ("vocab_size"): ArgRelation(
+                level=ParamLevel.REQUIRED,
+                relation=lambda vocab_size: vocab_size > 0,
+                failure_msg="Vocabulary size must be greater than 0",
+            ),
+            ("max_len"): ArgRelation(
+                level=ParamLevel.REQUIRED,
+                relation=lambda max_len: max_len > 0,
+                failure_msg="Max length must be greater than 0",
+            ),
+            ("num_layers"): ArgRelation(
+                level=ParamLevel.REQUIRED,
+                relation=lambda num_layers: num_layers > 0,
+                failure_msg="Number of layers must be greater than 0",
+            ),
+        }
+        v1, e1 = verify_args(arg_info, **kwargs)
+        v2, e2 = verify_arg_relations(arg_relations, **kwargs)
+        return v1, e1, v2, e2
 
     def init_kwargs(self) -> dict:
         return self.kwargs
