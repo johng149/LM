@@ -1,0 +1,30 @@
+{
+    "loss_fn": "cross_entropy",
+    "tokenizer": "gpt2",
+    "dataset": "tiny_shakespeare",
+    "dataset_path": "data/tiny_shakespeare",
+    "dataset_process_params": {},
+    "model_type": "decoder",
+    "use_validation": true,
+    "train_dl_params": {
+        "batch_size": 32,
+        "max_length": 100
+    },
+    "test_dl_params": {
+        "batch_size": 16,
+        "max_length": 100
+    },
+    "model_kwargs": {
+        "embed_dim": 512,
+        "num_heads": 8,
+        "factor": -1,
+        "max_len": 100,
+        "num_layers": 6
+    },
+    "optimizer": "Adam",
+    "optimizer_kwargs": {
+        "lr": 0.001
+    },
+    "summary_writer_dir": "runs/tiny_shakespeare_reference_decoder",
+    "checkpoint_path": "checkpoints/tiny_shakespeare_reference_decoder/model.pt"
+}

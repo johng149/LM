@@ -13,6 +13,7 @@ from src.common.models.dataloader_type import DataloaderType
 from torch.utils.tensorboard import SummaryWriter
 import json
 import os
+import argparse
 
 
 def load(
@@ -48,6 +49,11 @@ def load(
 
     dataset_process_params = jd["dataset_process_params"]
 
+    verifications, hasError = dataset.process_verify_args(**dataset_process_params)
+    if hasError:
+        raise ValueError(f"Invalid dataset process args: {verifications}")
+    dataset.process(dataset_path, **dataset_process_params)
+
     model_type = jd["model_type"]
 
     dataset_supports_model = model_type_to_processor_supports(dataset, model_type)()
@@ -70,7 +76,7 @@ def load(
     test_dl_params = jd.get("test_dl_params", None)
 
     train_dl = model_type_to_processor_dataloader(dataset, model_type)(
-        dataset_path=dataset_path, type=DataloaderType.TRAIN**train_dl_params
+        dataset_path=dataset_path, type=DataloaderType.TRAIN, **train_dl_params
     )
 
     if use_validation:
@@ -219,7 +225,7 @@ def load_from_checkpoint(
     )
 
 
-def entry(
+def entry_helper(
     jd_path: str,
     save_every: int,
     test_every: int,
@@ -248,3 +254,57 @@ def entry(
             save_every=save_every,
             test_every=test_every,
         )
+
+
+def entry(
+    jd_path: str,
+    save_every: int,
+    test_every: int,
+    device: str | device,
+    target_epochs: int,
+):
+    (
+        model,
+        optimizer,
+        loss_fn,
+        seen_epochs,
+        target_epochs,
+        train_dl,
+        test_dl,
+        writer,
+        checkpoint_path,
+        save_every,
+        test_every,
+        device,
+    ) = entry_helper(jd_path, save_every, test_every, device, target_epochs)
+    train(
+        model=model,
+        optimizer=optimizer,
+        loss_fn=loss_fn,
+        seen_epochs=seen_epochs,
+        target_epochs=target_epochs,
+        train_dl=train_dl,
+        test_dl=test_dl,
+        writer=writer,
+        checkpoint_path=checkpoint_path,
+        save_every=save_every,
+        test_every=test_every,
+        device=device,
+    )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--jd_path", type=str, required=True)
+    parser.add_argument("--save_every", type=int, required=True)
+    parser.add_argument("--test_every", type=int, required=True)
+    parser.add_argument("--device", type=str, required=True)
+    parser.add_argument("--target_epochs", type=int, required=True)
+    args = parser.parse_args()
+    entry(
+        jd_path=args.jd_path,
+        save_every=args.save_every,
+        test_every=args.test_every,
+        device=args.device,
+        target_epochs=args.target_epochs,
+    )
