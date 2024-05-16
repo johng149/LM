@@ -109,7 +109,7 @@ def load(
     optim_class = getattr(importlib.import_module("torch.optim"), optimizer)
     optimizer = optim_class(model.parameters(), **optimizer_kwargs)
 
-    l = available_loss_fns[loss_fn]
+    l = available_loss_fns[loss_fn](tokenizer)
 
     return (
         model,
@@ -214,7 +214,7 @@ def load_from_checkpoint(
     optimizer = optim_class(model.parameters())
     optimizer.load_state_dict(optimizer_state_dict)
 
-    l = available_loss_fns[loss_fn]
+    l = available_loss_fns[loss_fn](tokenizer)
 
     return (
         model,
