@@ -298,7 +298,10 @@ def test_processor_supports_seq2seq():
 def test_processor_causal():
     mock_tokenizer_info = MagicMock()
     processor = Processor(mock_tokenizer_info)
-    assert processor.causal("some_dataset_path", DataloaderType.TRAIN) is None
+    assert (
+        processor.causal("some_dataset_path", DataloaderType.TRAIN, batch_size=2)
+        is None
+    )
 
 
 @patch("src.datasets.base.processor.verify_args")
