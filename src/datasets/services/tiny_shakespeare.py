@@ -93,7 +93,7 @@ class TinyShakespeareProcessor(Processor):
 
         return dl
 
-    def causal_verify_args(self, **kwargs) -> Verification:
+    def causal_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
         return verify_args(
             {
                 "batch_size": ArgInfo(
