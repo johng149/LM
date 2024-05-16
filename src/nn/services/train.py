@@ -54,7 +54,7 @@ def save_checkpoint(
         "model_kwargs": model.kwargs,
         "optimizer_state_dict": optimizer.state_dict(),
         "global_step": global_step,
-        tensorboard_dir: tensorboard_dir,
+        "tensorboard_dir": tensorboard_dir,
     }
     info.update(additional_info)
     torch.save(
