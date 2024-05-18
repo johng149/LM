@@ -176,6 +176,7 @@ def train(
     # the epoch variable available to use in save_checkpoint
     ensure_dir_exists(checkpoint_path)
     epoch = seen_epochs
+    print(f"Model parameter count: {sum(p.numel() for p in model.parameters())}")
     try:
         train_iter = iter(train_loader)
         test_iter = iter(test_loader) if test_loader is not None else None
