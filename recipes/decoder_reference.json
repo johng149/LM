@@ -21,7 +21,7 @@
         "max_len": 100,
         "num_layers": 3
     },
-    "optimizer": "Adam",
+    "optimizer": "AdamW",
     "optimizer_kwargs": {
         "lr": 0.001
     },
