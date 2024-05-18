@@ -77,8 +77,8 @@ def train_step(
     write_scaled_loss: bool = False,
 ) -> float:
     optimizer.zero_grad()
-    batch_size = x.size(0)
-    output = model(x)
+    batch_size = y.size(0)
+    output = model(*x if isinstance(x, list) or isinstance(x, tuple) else x)
     loss = loss_fn(output, y)
     loss.backward()
     optimizer.step()
@@ -114,8 +114,8 @@ def test_step(
     write_scaled_loss: bool = False,
 ) -> float:
     with torch.no_grad():
-        batch_size = x.size(0)
-        output = model(x)
+        batch_size = y.size(0)
+        output = model(*x if isinstance(x, list) or isinstance(x, tuple) else x)
         loss = loss_fn(output, y)
         if writer is not None:
             writer.add_scalar(

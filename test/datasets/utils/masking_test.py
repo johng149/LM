@@ -3,7 +3,6 @@ from src.datasets.utils.masking import (
     self_attn_pad_mask,
     cross_attn_pad_mask,
     causal_self_attn_mask,
-    sdpa_flip,
 )
 from torch import Tensor
 import torch
@@ -104,11 +103,4 @@ def test_causal_self_attn_mask():
         ]
     )
     output = causal_self_attn_mask(samples)
-    assert torch.equal(output, expected_output)
-
-
-def test_sdpa_flip():
-    mask = torch.rand(3, 4, 4) > 0.5
-    expected_output = ~mask
-    output = sdpa_flip(mask)
     assert torch.equal(output, expected_output)

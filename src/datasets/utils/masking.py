@@ -65,11 +65,7 @@ def causal_self_attn_mask(samples: Tensor):
 # accepts arbitrary number of masks
 def combine_masks_before_flip(*masks: Tensor) -> Tensor:
     """
-    Combine multiple masks into a single mask. This should be
-    used prior to the call to sdpa_flip, as it assumes that
-    elements in the mask that are True are ones that should
-    not be masked as it uses the logical AND operation to
-    combine the masks.
+    Combine multiple masks into a single mask.
 
     @param masks: a variable number of masks, each of shape
         (batch_size, seq_len, seq_len), there must be at least
@@ -85,18 +81,12 @@ def combine_masks_before_flip(*masks: Tensor) -> Tensor:
     return combined_mask
 
 
-def sdpa_flip(mask: Tensor) -> Tensor:
+def multiheadify_sdpa(mask: Tensor) -> Tensor:
     """
+    Attempt to make given mask compatible with multihead scaled dot product attention.
+    This is done by unsqueezing the mask such that it goes from
+    (batch_size, seq_len1, seq_len2) to (batch_size, 1, seq_len1, seq_len2).
     @param mask: a tensor of shape (batch_size, seq_len, seq_len)
-        where the value at position (i, j, k) is True if the
-        attention matrix value at that same position should not be masked
-    @return: a tensor of shape (batch_size, seq_len, seq_len)
-        where the value at position (i, j, k) is False if the
-        attention matrix value at that same position should not be masked
-
-    The reason for this is that scaled dot product attention (sdpa) expects
-    a mask where True values indicate positions to mask out, while the
-    masks we create indicate positions to NOT mask out. This function
-    flips the mask so that it can be used with sdpa.
+    @return: a tensor of shape (batch_size, 1, seq_len, seq_len)
     """
-    return torch.logical_not(mask)
+    return mask.unsqueeze(1)
