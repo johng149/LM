@@ -3,7 +3,9 @@
     "tokenizer": "gpt2",
     "dataset": "tiny_shakespeare",
     "dataset_path": "data/tiny_shakespeare",
-    "dataset_process_params": {},
+    "dataset_process_params": {
+        "format": "torch"
+    },
     "model_type": "decoder",
     "use_validation": true,
     "train_dl_params": {

@@ -7,7 +7,7 @@ from typing import Optional, Callable
 import json
 from pathlib import Path
 from torch import Tensor
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 
 class Processor:
@@ -22,7 +22,7 @@ class Processor:
         self.mask_idx = info.mask_idx
         self.vocab_size = info.vocab_size
 
-    def process_helper(self, save_path: str, **kwargs):
+    def process_helper(self, save_path: str, format: Optional[str], **kwargs):
         raise NotImplementedError
 
     def process(self, save_path: str, use_cache=True, **kwargs):

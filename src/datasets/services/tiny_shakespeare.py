@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from src.common.models.dataloader_type import DataloaderType
 from src.datasets.base.processor import Processor
 from datasets import load_dataset, load_from_disk
-from typing import List, Callable, Any, Tuple, Optional
+from typing import List, Callable, Any, Tuple, Optional, Union
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
@@ -12,7 +12,6 @@ from src.common.models.args_info import ArgInfo
 from src.common.models.param_level import ParamLevel
 from src.datasets.utils.masking import (
     causal_self_attn_mask,
-    sdpa_flip,
     self_attn_pad_mask,
     process_tokens,
     combine_masks_before_flip,
@@ -29,11 +28,14 @@ class TinyShakespeareProcessor(Processor):
         enc = self.tokenizer.encode(source, return_tensors="pt").squeeze(0)
         return {"text": source, "text_encoded": enc}
 
-    def process_helper(self, save_path: str, **kwargs):
+    def process_helper(self, save_path: str, format: Optional[str], **kwargs):
         train = load_dataset("tiny_shakespeare", split="train")
         val = load_dataset("tiny_shakespeare", split="validation")
         train = train.map(self.encode)
         val = val.map(self.encode)
+        if format:
+            train = train.with_format(format)
+            val = val.with_format(format)
         train_path = self.format_dataset_path(save_path, DataloaderType.TRAIN)
         val_path = self.format_dataset_path(save_path, DataloaderType.VALIDATION)
         train.save_to_disk(train_path)
@@ -46,11 +48,21 @@ class TinyShakespeareProcessor(Processor):
         self,
     ) -> Callable[[List[List[int]], int, int, int], Tuple[Tensor, Tensor]]:
         def collate_fn(
-            batch: List[List[int]], bos_idx: int, eos_idx: int, pad_idx: int
+            batch: Union[List[List[int]], List[Tensor]],
+            bos_idx: int,
+            eos_idx: int,
+            pad_idx: int,
         ) -> Tuple[Tensor, Tensor]:
             bos_idx = torch.tensor([bos_idx], dtype=torch.long)
             eos_idx = torch.tensor([eos_idx], dtype=torch.long)
-            combined = [torch.cat([bos_idx, torch.tensor(x), eos_idx]) for x in batch]
+            # figure out which it is, is a list of list or list of tensors?
+            is_list_of_tensors = isinstance(batch[0], Tensor)
+            if not is_list_of_tensors:
+                combined = [
+                    torch.cat([bos_idx, torch.tensor(x), eos_idx]) for x in batch
+                ]
+            else:
+                combined = [torch.cat([bos_idx, x, eos_idx]) for x in batch]
 
             source = [x[:-1] for x in combined]
             target = [x[1:] for x in combined]
@@ -65,7 +77,6 @@ class TinyShakespeareProcessor(Processor):
             source_causal_mask = causal_self_attn_mask(source)
             source_pad_mask = self_attn_pad_mask(is_not_pad)
             source_mask = combine_masks_before_flip(source_causal_mask, source_pad_mask)
-            source_mask = sdpa_flip(source_mask)
 
             return source, source_mask, target
 
