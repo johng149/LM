@@ -10,6 +10,7 @@ from src.common.models.args_info import ArgInfo
 from src.common.models.args_relation import ArgRelation
 from src.common.models.param_level import ParamLevel
 from src.common.services.verification import verify_args, verify_arg_relations
+from src.datasets.utils.masking import causal_self_attn_mask, sdpa_flip
 
 
 class Decoder(Architecture):
@@ -119,7 +120,8 @@ class Decoder(Architecture):
             # a slice of the input tensor
             x_slice = x[:, -self.max_len :]
             _, x_len = x_slice.shape
-            mask = torch.tril(torch.ones(x_len, x_len)).bool().unsqueeze(0).to(x.device)
+            mask = causal_self_attn_mask(x_slice)
+            mask = sdpa_flip(mask)
             logits = self.forward(x_slice, mask)
             last_logits = logits[:, -1, :]
             next_token = strat.decode(last_logits)
