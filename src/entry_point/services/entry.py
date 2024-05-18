@@ -209,9 +209,10 @@ def load_from_checkpoint(
     model = model.to(device)
 
     optimizer = jd["optimizer"]
+    optimizer_kwargs = jd["optimizer_kwargs"]
 
     optim_class = getattr(importlib.import_module("torch.optim"), optimizer)
-    optimizer = optim_class(model.parameters())
+    optimizer = optim_class(model.parameters(), **optimizer_kwargs)
     optimizer.load_state_dict(optimizer_state_dict)
 
     l = available_loss_fns[loss_fn](tokenizer)
