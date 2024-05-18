@@ -10,6 +10,13 @@ from src.common.models.verification import Verification
 from src.common.services.verification import verify_args
 from src.common.models.args_info import ArgInfo
 from src.common.models.param_level import ParamLevel
+from src.datasets.utils.masking import (
+    causal_self_attn_mask,
+    sdpa_flip,
+    self_attn_pad_mask,
+    process_tokens,
+    combine_masks_before_flip,
+)
 
 
 class TinyShakespeareProcessor(Processor):
@@ -54,7 +61,13 @@ class TinyShakespeareProcessor(Processor):
             source = torch.nested.to_padded_tensor(source, pad_idx)
             target = torch.nested.to_padded_tensor(target, pad_idx)
 
-            return source, target
+            len_not_pad, is_not_pad = process_tokens(source, pad_idx)
+            source_causal_mask = causal_self_attn_mask(source)
+            source_pad_mask = self_attn_pad_mask(is_not_pad)
+            source_mask = combine_masks_before_flip(source_causal_mask, source_pad_mask)
+            source_mask = sdpa_flip(source_mask)
+
+            return source, source_mask, target
 
         return collate_fn
 
@@ -75,7 +88,7 @@ class TinyShakespeareProcessor(Processor):
                 # the fact that we are adding the bos / eos token during
                 # collation
                 self.max_length = max_length - 1
-                self.raw = load_from_disk(self.path)
+                self.raw = load_from_disk(self.path, keep_in_memory=True)
 
             def __len__(self):
                 return len(self.raw["text_encoded"][0])
