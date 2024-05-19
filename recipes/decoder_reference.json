@@ -29,5 +29,5 @@
         "lr": 0.001
     },
     "summary_writer_dir": "runs/tiny_shakespeare_reference_decoder_dropout_0.12",
-    "checkpoint_path": "checkpoints/tiny_shakespeare_reference_decoder/model.pt"
+    "checkpoint_path": "checkpoints/tiny_shakespeare_reference_decoder_dropout_0.12/model.pt"
 }
