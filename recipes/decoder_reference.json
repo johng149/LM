@@ -17,11 +17,12 @@
         "max_length": 100
     },
     "model_kwargs": {
-        "embed_dim": 512,
+        "embed_dim": 384,
         "num_heads": 8,
         "factor": -1,
         "max_len": 100,
-        "num_layers": 3
+        "num_layers": 3,
+        "dropout": 0.12
     },
     "optimizer": "AdamW",
     "optimizer_kwargs": {

@@ -17,7 +17,9 @@ from src.datasets.utils.masking import (
 
 
 class Decoder(Architecture):
-    def __init__(self, embed_dim, num_heads, factor, vocab_size, max_len, num_layers):
+    def __init__(
+        self, embed_dim, num_heads, factor, vocab_size, max_len, num_layers, dropout=0.1
+    ):
         super().__init__()
         self.embed_dim = embed_dim
         self.num_heads = num_heads
@@ -25,6 +27,7 @@ class Decoder(Architecture):
         self.vocab_size = vocab_size
         self.max_len = max_len
         self.num_layers = num_layers
+        self.dropout_prob = dropout
         self.kwargs = {
             "embed_dim": embed_dim,
             "num_heads": num_heads,
@@ -32,12 +35,17 @@ class Decoder(Architecture):
             "vocab_size": vocab_size,
             "max_len": max_len,
             "num_layers": num_layers,
+            "dropout": dropout,
         }
         self.embedding = StableEmbedding(vocab_size, embed_dim)
         self.pos_embedding = StableEmbedding(max_len, embed_dim)
         self.layers = torch.nn.ModuleList(
-            [TransformerBlock(embed_dim, num_heads, factor) for _ in range(num_layers)]
+            [
+                TransformerBlock(embed_dim, num_heads, factor, dropout)
+                for _ in range(num_layers)
+            ]
         )
+        self.dropout = torch.nn.Dropout(dropout)
         self.norm = torch.nn.LayerNorm(embed_dim)
         self.classifier = torch.nn.Linear(embed_dim, vocab_size)
 
@@ -75,6 +83,12 @@ class Decoder(Architecture):
                 description="The number of layers in the transformer",
                 type=int,
             ),
+            "dropout": ArgInfo(
+                level=ParamLevel.OPTIONAL,
+                description="The dropout probability",
+                type=float,
+                default=0.1,
+            ),
         }
         arg_relations = {
             ("embed_dim", "num_heads"): ArgRelation(
@@ -97,6 +111,11 @@ class Decoder(Architecture):
                 relation=lambda num_layers: num_layers > 0,
                 failure_msg="Number of layers must be greater than 0",
             ),
+            ("dropout"): ArgRelation(
+                level=ParamLevel.OPTIONAL,
+                relation=lambda dropout: 0 <= dropout < 1,
+                failure_msg="Dropout probability must be between 0 and 1",
+            ),
         }
         v1, e1 = verify_args(arg_info, **kwargs)
         v2, e2 = verify_arg_relations(arg_relations, **kwargs)
@@ -113,6 +132,7 @@ class Decoder(Architecture):
         for layer in self.layers:
             x = layer(x, mask=mask)
         x = self.norm(x)
+        x = self.dropout(x)
         return self.classifier(x)
 
     def naive_inference(
