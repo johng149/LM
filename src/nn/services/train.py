@@ -121,7 +121,11 @@ def test_step(
 ) -> float:
     with torch.no_grad():
         batch_size = y.size(0)
-        output = model(*x if isinstance(x, list) or isinstance(x, tuple) else x)
+        # output = model(*x if isinstance(x, list) or isinstance(x, tuple) else x)
+        if isinstance(x, list) or isinstance(x, tuple):
+            output = model(*x)
+        else:
+            output = model(x)
         loss = loss_fn(output, y)
         if writer is not None:
             writer.add_scalar(
