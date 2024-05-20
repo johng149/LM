@@ -78,7 +78,13 @@ def train_step(
 ) -> float:
     optimizer.zero_grad()
     batch_size = y.size(0)
-    output = model(*x if isinstance(x, list) or isinstance(x, tuple) else x)
+    if isinstance(x, list) or isinstance(x, tuple):
+        output = model(*x)
+    else:
+        output = model(x)
+    # output = model(*x if isinstance(x, list) or isinstance(x, tuple) else x)
+    # the above one-liner should be equivalent to the if-else block above,
+    # yet the test fails when using the one-liner?
     loss = loss_fn(output, y)
     loss.backward()
     optimizer.step()
