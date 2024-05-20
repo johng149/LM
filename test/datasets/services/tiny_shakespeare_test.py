@@ -6,6 +6,12 @@ import torch
 from src.common.models.dataloader_type import DataloaderType
 from src.common.models.args_info import ArgInfo
 from src.common.models.param_level import ParamLevel
+from src.datasets.utils.masking import (
+    causal_self_attn_mask,
+    self_attn_pad_mask,
+    process_tokens,
+    combine_masks_before_flip,
+)
 
 
 def setup_tokenizer():
@@ -31,10 +37,11 @@ def test_tiny_shakespeare_helper(mock_load_dataset):
     mock_load_dataset_result = MagicMock()
     mock_load_dataset.return_value = mock_load_dataset_result
     mock_load_dataset_result.map.return_value = mock_load_dataset_result
+    mock_load_dataset_result.with_format.return_value = mock_load_dataset_result
     tokenizer_info = setup_tokenizer()
     processor = Processor(tokenizer_info)
     save_path = "some/path"
-    processor.process_helper(save_path)
+    processor.process_helper(save_path, format="torch")
     assert mock_load_dataset.call_count == 2
     assert mock_load_dataset.call_args_list == [
         call("tiny_shakespeare", split="train"),
@@ -65,10 +72,17 @@ def test_tiny_shakespeare_collate_causal():
     pad_idx = -2
 
     expected_source = torch.tensor([[bos_idx, 1, 2, 3, pad_idx], [bos_idx, 4, 5, 6, 4]])
+    expected_source_mask_causal = causal_self_attn_mask(expected_source)
+    _, is_not_pad = process_tokens(expected_source, pad_idx)
+    expected_source_mask_pad = self_attn_pad_mask(is_not_pad)
+    expected_source_mask = combine_masks_before_flip(
+        expected_source_mask_causal, expected_source_mask_pad
+    )
     expected_target = torch.tensor([[1, 2, 3, eos_idx, pad_idx], [4, 5, 6, 4, eos_idx]])
 
-    source, target = collate_fn(batch, bos_idx, eos_idx, pad_idx)
+    source, source_mask, target = collate_fn(batch, bos_idx, eos_idx, pad_idx)
     assert torch.equal(source, expected_source)
+    assert torch.equal(source_mask, expected_source_mask)
     assert torch.equal(target, expected_target)
 
 
@@ -89,14 +103,16 @@ def test_tiny_shakespeare_collate_causal_same_len():
             [bos_idx, 4, 5, 6],
         ]
     )
+    expected_source_mask = causal_self_attn_mask(expected_source)
     expected_target = torch.tensor(
         [
             [1, 2, 3, eos_idx],
             [4, 5, 6, eos_idx],
         ]
     )
-    source, target = collate_fn(batch, bos_idx, eos_idx, pad_idx)
+    source, source_mask, target = collate_fn(batch, bos_idx, eos_idx, pad_idx)
     assert torch.equal(source, expected_source)
+    assert torch.equal(source_mask, expected_source_mask)
     assert torch.equal(target, expected_target)
 
 
@@ -121,12 +137,14 @@ def test_tiny_shakespeare_causal(mock_load_from_disk):
     source, target = sample[:-1], sample[-1]
 
     assert isinstance(source, list) or isinstance(source, tuple)
-    assert len(source) == 1
+    assert len(source) == 2
 
     source = source[0]
+    source_mask = source[1]
 
     assert isinstance(target, Tensor)
     assert isinstance(source, Tensor)
+    assert isinstance(source_mask, Tensor)
 
     # since the dataloader passes in an index to the dataset to
     # produce a sequence, and we don't have access to the sequence
