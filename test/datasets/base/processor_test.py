@@ -84,7 +84,7 @@ def test_processor_process_verify_args(mock_verify_args):
     mock_tokenizer_info = MagicMock()
     processor = Processor(mock_tokenizer_info)
     mock_verify_args.return_value = None
-    assert processor.process_verify_args() is None
+    assert processor.process_verify_args_helper() is None
     assert mock_verify_args.call_count == 1
     assert mock_verify_args.call_args == mock.call({}, **{})
 

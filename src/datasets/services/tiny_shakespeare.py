@@ -41,9 +41,6 @@ class TinyShakespeareProcessor(Processor):
         train.save_to_disk(train_path)
         val.save_to_disk(val_path)
 
-    def process_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
-        return verify_args({}, **kwargs)
-
     def collate_causal_fn(
         self,
     ) -> Callable[[List[List[int]], int, int, int], Tuple[Tensor, Tensor]]:

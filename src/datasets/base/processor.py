@@ -1,6 +1,10 @@
 from src.tokenizers.models.info import Info
 from src.common.models.verification import Verification
-from src.common.services.verification import verify_args
+from src.common.services.verification import (
+    verify_args,
+    verify_arg_relations,
+    combine_verification_results,
+)
 from src.common.models.dataloader_type import DataloaderType
 from torch.utils.data import DataLoader
 from typing import Optional, Callable
@@ -34,8 +38,16 @@ class Processor:
         self.process_helper(save_path, **kwargs)
         self.set_cache(save_path, self.__class__.__name__, **kwargs)
 
+    def process_verify_args_helper(
+        self, **kwargs
+    ) -> Tuple[List[Verification], bool, List[Verification], bool]:
+        v1, e1 = verify_args({}, **kwargs)
+        v2, e2 = verify_arg_relations({}, **kwargs)
+        return v1, e1, v2, e2
+
     def process_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
-        return verify_args({}, **kwargs)
+        v1, e1, v2, e2 = self.process_verify_args_helper(**kwargs)
+        return combine_verification_results([v1, v2, e1, e2])
 
     def already_cached(self, path: str, class_name: str, **kwargs) -> bool:
         # we look for a json file at the specified path, we expect

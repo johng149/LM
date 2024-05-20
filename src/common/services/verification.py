@@ -117,3 +117,14 @@ def verify_arg_relations(
                     result.append(Error(failure_msg))
                     hasError = True
     return result, hasError
+
+
+def combine_verification_results(results: list) -> Tuple[List[Verification], bool]:
+    verifications = []
+    hasError = False
+    for elem in results:
+        if isinstance(elem, bool):
+            hasError = hasError or elem
+        else:
+            verifications.extend(elem)
+    return verifications, hasError

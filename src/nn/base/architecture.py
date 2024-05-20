@@ -3,7 +3,11 @@ from src.nn.models.decoding_strat_model import AutoregressiveStrategy
 from torch import Tensor
 from src.common.models.verification import Verification
 from typing import List, Tuple
-from src.common.services.verification import verify_args, verify_arg_relations
+from src.common.services.verification import (
+    verify_args,
+    verify_arg_relations,
+    combine_verification_results,
+)
 
 
 class Architecture(Module):
@@ -19,12 +23,11 @@ class Architecture(Module):
 
     def verify_init_kwargs(self, **kwargs) -> Tuple[List[Verification], bool]:
         v1, e1, v2, e2 = self.verify_init_kwargs_helper(**kwargs)
-        if e1 or e2:
-            return v1 + v2, True
-        else:
-            return v1 + v2, False
+        return combine_verification_results([v1, v2, e1, e2])
 
-    def verify_init_kwargs_helper(self, **kwargs):
+    def verify_init_kwargs_helper(
+        self, **kwargs
+    ) -> Tuple[List[Verification], bool, List[Verification], bool]:
         v1, e1 = verify_args({}, **kwargs)
         v2, e2 = verify_arg_relations({}, **kwargs)
         return v1, e1, v2, e2
