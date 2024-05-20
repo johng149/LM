@@ -49,9 +49,7 @@ def load(
 
     dataset_process_params = jd["dataset_process_params"]
 
-    verifications, hasError = dataset.process_verify_args_helper(
-        **dataset_process_params
-    )
+    verifications, hasError = dataset.process_verify_args(**dataset_process_params)
     if hasError:
         raise ValueError(f"Invalid dataset process args: {verifications}")
     dataset.process(dataset_path, **dataset_process_params)
