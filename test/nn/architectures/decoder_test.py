@@ -13,6 +13,7 @@ def decoder(request):
     vocab_size = 3
     max_len = 100
     num_layers = 2
+    dropout = 0.1
     return (
         Decoder(
             embed_dim=embed_dim,
@@ -21,6 +22,7 @@ def decoder(request):
             vocab_size=vocab_size,
             max_len=max_len,
             num_layers=num_layers,
+            dropout=dropout,
         ),
         factor,
     )
@@ -35,6 +37,7 @@ def test_init_kwargs(decoder):
         "vocab_size": 3,
         "max_len": 100,
         "num_layers": 2,
+        "dropout": 0.1,
     }
     assert decoder.init_kwargs() == expected_kwargs
 
