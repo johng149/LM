@@ -1,0 +1,35 @@
+{
+    "loss_fn": "cross_entropy",
+    "tokenizer": "helsinki_en_zh",
+    "dataset": "wmt19_en_zh",
+    "dataset_path": "data/wmt19_en_zh",
+    "dataset_process_params": {
+        "format": "torch",
+        "max_en_len": 50,
+        "max_zh_len": 50
+    },
+    "model_type": "decoder",
+    "use_validation": true,
+    "train_dl_params": {
+        "batch_size": 64,
+        "max_length": 100
+    },
+    "test_dl_params": {
+        "batch_size": 16,
+        "max_length": 100
+    },
+    "model_kwargs": {
+        "embed_dim": 384,
+        "num_heads": 8,
+        "factor": -1,
+        "max_len": 104,
+        "num_layers": 3,
+        "dropout": 0.12
+    },
+    "optimizer": "AdamW",
+    "optimizer_kwargs": {
+        "lr": 0.001
+    },
+    "summary_writer_dir": "runs/wmt19_en_zh_decoder_dropout_0.12",
+    "checkpoint_path": "checkpoints/wmt19_en_zh_decoder_dropout_0.12/model.pt"
+}
