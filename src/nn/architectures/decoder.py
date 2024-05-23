@@ -49,6 +49,9 @@ class Decoder(Architecture):
         self.norm = torch.nn.LayerNorm(embed_dim)
         self.classifier = torch.nn.Linear(embed_dim, vocab_size)
 
+        # weight tying
+        self.embedding.embedding.weight = self.classifier.weight
+
     def verify_init_kwargs_helper(
         self, **kwargs
     ) -> Tuple[List[Verification], bool, List[Verification], bool]:
