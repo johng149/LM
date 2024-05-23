@@ -43,7 +43,9 @@ class TinyShakespeareProcessor(Processor):
 
     def collate_causal_fn(
         self,
-    ) -> Callable[[List[List[int]], int, int, int], Tuple[Tensor, Tensor]]:
+    ) -> Callable[
+        [List[List[int] | List[Tensor]], int, int, int], Tuple[Tensor, Tensor]
+    ]:
         def collate_fn(
             batch: Union[List[List[int]], List[Tensor]],
             bos_idx: int,
