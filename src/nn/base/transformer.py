@@ -52,8 +52,8 @@ class TransformerBlock(nn.Module):
         self.factor = factor
         self.dropout_prob = dropout
         self.attn = TransformerAttention(embedding_dim, num_heads, factor, dropout)
-        self.ffn = phm(factor, embedding_dim, embedding_dim * 4)
-        self.ffn2 = phm(factor, embedding_dim * 4, embedding_dim)
+        self.ffn = phm(factor, embedding_dim, embedding_dim * 3)
+        self.ffn2 = phm(factor, embedding_dim * 3, embedding_dim)
         self.norm1 = nn.LayerNorm(embedding_dim)
         self.norm2 = nn.LayerNorm(embedding_dim)
         self.ffn_activation = nn.GELU()
