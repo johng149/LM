@@ -11,19 +11,19 @@
     "model_type": "decoder",
     "use_validation": true,
     "train_dl_params": {
-        "batch_size": 64,
+        "batch_size": 32,
         "max_length": 100
     },
     "test_dl_params": {
-        "batch_size": 16,
+        "batch_size": 32,
         "max_length": 100
     },
     "model_kwargs": {
         "embed_dim": 384,
-        "num_heads": 8,
+        "num_heads": 6,
         "factor": -1,
         "max_len": 104,
-        "num_layers": 3,
+        "num_layers": 6,
         "dropout": 0.12
     },
     "optimizer": "AdamW",
