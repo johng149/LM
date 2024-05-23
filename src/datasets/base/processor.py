@@ -7,7 +7,7 @@ from src.common.services.verification import (
 )
 from src.common.models.dataloader_type import DataloaderType
 from torch.utils.data import DataLoader
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 import json
 from pathlib import Path
 from torch import Tensor
@@ -114,13 +114,13 @@ class Processor:
 
     def collate_causal_fn(
         self,
-    ) -> Optional[
-        Callable[[List[List[int] | List[Tensor]], int, int, int], Tuple[Tensor, Tensor]]
-    ]:
+    ) -> Optional[Callable[[Any, int, int, int], Tuple[Tensor, Tensor]]]:
         """
         For datasets that support causal language modeling, this
         function should return a collate function that given
-        batch (a list of lists of integers),
+        batch some data which contains the batch, for example,
+            it could be a list of list of integers or a list of
+            tensors, or some other format
         bos_idx (the index of the beginning of sequence token),
         eos_idx (the index of the end of sequence token),
         pad_idx (the index of the padding token),
