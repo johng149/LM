@@ -58,6 +58,7 @@ def test_train_step(mock_save_checkpoint):
     with torch.no_grad():
         expected_loss: float = loss_fn(model(x), y).item()
     writer = MagicMock()
+    writer.get_logdir.return_value = "mock_logdir"
     global_step = 3
     checkpoint_path = "mock_checkpoint_path/model.pt"
     save_every = 3
@@ -76,7 +77,7 @@ def test_train_step(mock_save_checkpoint):
     assert abs(loss - expected_loss) < eps
     assert mock_save_checkpoint.call_count == 1
     assert mock_save_checkpoint.call_args == mock.call(
-        model, optimizer, checkpoint_path, global_step
+        model, optimizer, checkpoint_path, global_step, writer.get_logdir(), None
     )
     assert writer.add_scalar.call_count == 1
     assert writer.add_scalar.call_args == mock.call(
@@ -156,5 +157,5 @@ def test_train(
     # the finally block
     assert mock_save_checkpoint.call_count == 3
     assert mock_save_checkpoint.call_args == mock.call(
-        model, optimizer, checkpoint_path, 5
+        model, optimizer, checkpoint_path, 5, writer.get_logdir(), None
     )
