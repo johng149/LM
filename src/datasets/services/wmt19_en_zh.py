@@ -14,6 +14,7 @@ from src.datasets.utils.masking import (
     causal_self_attn_mask,
     self_attn_pad_mask,
     process_tokens,
+    cross_attn_pad_mask,
     combine_masks_before_flip,
 )
 
@@ -130,6 +131,91 @@ class WMT19EnZhProcessor(Processor):
         return dl
 
     def causal_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
+        return verify_args(
+            {
+                "batch_size": ArgInfo(
+                    level=ParamLevel.REQUIRED,
+                    type=int,
+                    description="The batch size for the DataLoader",
+                )
+            },
+            **kwargs
+        )
+
+    def collate_seq2seq_fn(
+        self,
+    ) -> Callable[
+        [List[dict], int, int, int],
+        Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor],
+    ]:
+        def collate_fn(
+            batch: List[dict],
+            bos_idx: int,
+            eos_idx: int,
+            pad_idx: int,
+        ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+            bos_idx = torch.tensor([bos_idx], dtype=torch.long)
+            eos_idx = torch.tensor([eos_idx], dtype=torch.long)
+
+            encoder_input = []
+            decoder_input = []
+            target = []
+            for x in batch:
+                en = x["en_encoded"]
+                zh = x["zh_encoded"]
+                if not isinstance(en, Tensor):
+                    en = torch.tensor(en)
+                if not isinstance(zh, Tensor):
+                    zh = torch.tensor(zh)
+                concatenated = torch.cat([bos_idx, en, eos_idx])
+                encoder_input.append(concatenated)
+                decoder_input.append(torch.cat([bos_idx, zh]))
+                target.append(torch.cat([zh, eos_idx]))
+
+            encoder_input = torch.nested.nested_tensor(encoder_input)
+            decoder_input = torch.nested.nested_tensor(decoder_input)
+            target = torch.nested.nested_tensor(target)
+
+            encoder_input = torch.nested.to_padded_tensor(encoder_input, pad_idx)
+            decoder_input = torch.nested.to_padded_tensor(decoder_input, pad_idx)
+            target = torch.nested.to_padded_tensor(target, pad_idx)
+
+            len_enc_not_pad, is_enc_not_pad = process_tokens(encoder_input, pad_idx)
+            len_dec_not_pad, is_dec_not_pad = process_tokens(decoder_input, pad_idx)
+            enc_pad_mask = self_attn_pad_mask(is_enc_not_pad)
+            dec_pad_mask = self_attn_pad_mask(is_dec_not_pad)
+            dec_causal_mask = causal_self_attn_mask(decoder_input)
+            dec_mask = combine_masks_before_flip(dec_causal_mask, dec_pad_mask)
+            enc_kv_dec_q_mask = cross_attn_pad_mask(is_enc_not_pad, is_dec_not_pad)
+
+            return (
+                encoder_input,
+                enc_pad_mask,
+                decoder_input,
+                dec_mask,
+                enc_kv_dec_q_mask,
+                target,
+            )
+
+        return collate_fn
+
+    def seq2seq(
+        self, dataset_path: str, type: DataloaderType, batch_size: int, **kwargs
+    ) -> DataLoader | None:
+        path = self.format_dataset_path(dataset_path, type)
+
+        data = load_from_disk(path)
+        collate = self.collate_seq2seq_fn()
+        dl = DataLoader(
+            data,
+            batch_size=batch_size,
+            collate_fn=lambda x: collate(x, self.bos_idx, self.eos_idx, self.pad_idx),
+            shuffle=True,
+        )
+
+        return dl
+
+    def seq2seq_verify_args(self, **kwargs) -> Tuple[List[Verification] | bool]:
         return verify_args(
             {
                 "batch_size": ArgInfo(
