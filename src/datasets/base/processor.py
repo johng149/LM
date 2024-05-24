@@ -98,7 +98,29 @@ class Processor:
     def seq2seq_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
         return verify_args({}, **kwargs)
 
-    def collate_seq2seq_fn(self) -> Optional[Callable]:
+    def collate_seq2seq_fn(
+        self,
+    ) -> Optional[
+        Callable[
+            [Any, int, int, int], Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]
+        ]
+    ]:
+        """
+        For datasets that support seq2seq language modeling, this function
+        should return a collate function that given batch some data which
+        contains the batch, for example it could be a list of list of integers
+        or a list of tensors, or some other format
+        bos_idx (the index of the beginning of sequence token),
+        eos_idx (the index of the end of sequence token),
+        pad_idx (the index of the padding token),
+        returns a tuple of tensors
+        (encoder_input,
+        encoder_self_attn_mask,
+        decoder_input,
+        decoder_self_attn_mask,
+        encoder_kv_decoder_q_mask,
+        target)
+        """
         return None
 
     def supports_seq2seq(self) -> bool:
