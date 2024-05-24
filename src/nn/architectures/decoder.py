@@ -12,7 +12,7 @@ from src.common.models.param_level import ParamLevel
 from src.common.services.verification import verify_args, verify_arg_relations
 from src.datasets.utils.masking import (
     causal_self_attn_mask,
-    multiheadify_sdpa,
+    multiheadify,
 )
 
 
@@ -129,8 +129,7 @@ class Decoder(Architecture):
 
     def forward(self, x, mask=None):
         batch_size, seq_len = x.shape
-        if mask is not None and mask.dim() == 3 and self.num_heads > 1:
-            mask = multiheadify_sdpa(mask)
+        mask = multiheadify([mask], self.num_heads)[0]
         x = self.embedding(x) + self.pos_embedding(torch.arange(seq_len).to(x.device))
         for layer in self.layers:
             x = layer(x, mask=mask)
@@ -149,8 +148,7 @@ class Decoder(Architecture):
             x_slice = x[:, -self.max_len :]
             _, x_len = x_slice.shape
             mask = causal_self_attn_mask(x_slice)
-            if mask.dim() == 3 and self.num_heads > 1:
-                mask = multiheadify_sdpa(mask)
+            mask = multiheadify([mask], self.num_heads)[0]
             logits = self.forward(x_slice, mask)
             last_logits = logits[:, -1, :]
             next_token = strat.decode(last_logits)
