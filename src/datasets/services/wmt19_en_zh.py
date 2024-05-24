@@ -126,6 +126,7 @@ class WMT19EnZhProcessor(Processor):
             data,
             batch_size=batch_size,
             collate_fn=lambda x: collate(x, self.bos_idx, self.eos_idx, self.pad_idx),
+            shuffle=True,
         )
 
         return dl
