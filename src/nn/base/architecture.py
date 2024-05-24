@@ -33,7 +33,7 @@ class Architecture(Module):
         return v1, e1, v2, e2
 
     def naive_inference(
-        self, x: Tensor, strat: AutoregressiveStrategy, max_len: int
+        self, *args, strat: AutoregressiveStrategy, max_len: int
     ) -> Tensor:
         """
         Runs inference assuming that `x` has batch size 1, and contains
@@ -44,12 +44,4 @@ class Architecture(Module):
         @param max_len: the maximum length of the output tensor
         @return: the output tensor
         """
-        batch_size, seq_len = x.shape
-        assert batch_size == 1, "Batch size must be 1 for naive inference"
-        assert (
-            x == strat.pad_id()
-        ).sum() == 0, "Input tensor must not contain padding tokens for naive inference"
-        # since Architecture is an abstract class, this method should be overridden,
-        # here we are returning just None, however, the actual implementation should
-        # return the output tensor as indicated in the docstring
         return None
