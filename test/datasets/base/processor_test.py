@@ -274,7 +274,10 @@ def test_processor_encode():
 def test_processor_seq2seq():
     mock_tokenizer_info = MagicMock()
     processor = Processor(mock_tokenizer_info)
-    assert processor.seq2seq("some_dataset_path", DataloaderType.TRAIN) is None
+    assert (
+        processor.seq2seq("some_dataset_path", DataloaderType.TRAIN, batch_size=2)
+        is None
+    )
 
 
 @patch("src.datasets.base.processor.verify_args")
