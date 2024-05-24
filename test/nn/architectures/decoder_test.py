@@ -109,5 +109,5 @@ def test_naive_inference(decoder):
         tokenizer_info.eos_idx = 0
         device = torch.device("cpu")
         strat = GreedyAutoregressiveStrategy(tokenizer_info, device)
-        output = decoder.naive_inference(x, strat, 1)
+        output = decoder.naive_inference(x, strat=strat, max_len=1)
         assert output[0, -1] == 1
