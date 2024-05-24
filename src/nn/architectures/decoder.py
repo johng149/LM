@@ -138,9 +138,12 @@ class Decoder(Architecture):
         return self.classifier(x)
 
     def naive_inference(
-        self, x: Tensor, strat: AutoregressiveStrategy, max_len: int
+        self, *args, strat: AutoregressiveStrategy, max_len: int
     ) -> Tensor:
-        super().naive_inference(x, strat, max_len)
+        x = args[0]
+        batch_size, seq_len = x.shape
+        assert batch_size == 1
+        assert (x == strat.pad_id()).sum() == 0
         eos_idx = strat.info.eos_idx
         for i in range(max_len):
             # since model has limited positional encoding, we take
