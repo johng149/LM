@@ -114,7 +114,7 @@ class Processor:
 
     def collate_causal_fn(
         self,
-    ) -> Optional[Callable[[Any, int, int, int], Tuple[Tensor, Tensor]]]:
+    ) -> Optional[Callable[[Any, int, int, int], Tuple[Tensor, Tensor, Tensor]]]:
         """
         For datasets that support causal language modeling, this
         function should return a collate function that given

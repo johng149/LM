@@ -77,7 +77,7 @@ class WMT19EnZhProcessor(Processor):
     def collate_causal_fn(
         self,
     ) -> Callable[
-        [List[List[int] | List[Tensor]], int, int, int], Tuple[Tensor, Tensor]
+        [List[List[int] | List[Tensor]], int, int, int], Tuple[Tensor, Tensor, Tensor]
     ]:
         def collate_fn(
             batch: List[dict],
