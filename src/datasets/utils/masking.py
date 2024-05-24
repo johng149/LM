@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from typing import Tuple
+from typing import Tuple, List
 
 
 def process_tokens(tokens: Tensor, pad_idx: int) -> Tuple[Tensor, Tensor]:
@@ -81,7 +81,7 @@ def combine_masks_before_flip(*masks: Tensor) -> Tensor:
     return combined_mask
 
 
-def multiheadify_sdpa(mask: Tensor) -> Tensor:
+def multiheadify_sdpa_helper(mask: Tensor) -> Tensor:
     """
     Attempt to make given mask compatible with multihead scaled dot product attention.
     This is done by unsqueezing the mask such that it goes from
@@ -90,3 +90,21 @@ def multiheadify_sdpa(mask: Tensor) -> Tensor:
     @return: a tensor of shape (batch_size, 1, seq_len, seq_len)
     """
     return mask.unsqueeze(1)
+
+
+def multiheadify(x: List[Tensor | None], num_heads: int):
+    """
+    Given a list of masks, check if they are compatible with multihead attention.
+    If not, make them compatible by using multiheadify_sdpa_helper.
+    @param x: a list of tensors of varying shapes
+    @param num_heads: the number of heads in the multihead attention
+    @return: a list of tensors of varying shapes
+    """
+    return [
+        (
+            multiheadify_sdpa_helper(mask)
+            if mask is not None and mask.dim() == 3 and num_heads > 1
+            else mask
+        )
+        for mask in x
+    ]
