@@ -13,3 +13,5 @@ uncovered/
 *.tfevents.*
 # ignore checkpoint files
 *.pt
+# ignore tmp dir
+tmp/
