@@ -77,7 +77,8 @@ def brute_force_dag_loss(
     nodes in the DAG. It should contain log probabilities of transitioning
     from one node to another. The reason the first dimension is N-1 is because
     we can assume that once we reach the last node, there are no more valid
-    paths to take.
+    paths to take. If we are given a (N, N) matrix, the last row will be
+    removed
     @param emissions: Tensor of shape (N, C) where N is the number of nodes in
     the DAG and C is the number of classes that can be emitted by each node.
     It should contain log probabilities of emitting each class at each node.
@@ -87,6 +88,9 @@ def brute_force_dag_loss(
 
     @return: The negative log probability of the target sequence given the DAG
     """
+    r, c = transition_matrix.shape
+    if r == c:
+        transition_matrix = transition_matrix[:-1]
     em = EmissionMan(emission_probs=emissions.T)
     dfs = DFS()
     dfs.reset(
