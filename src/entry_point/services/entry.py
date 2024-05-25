@@ -1,7 +1,7 @@
 from src.nn.services.available_models import available_models
 from src.datasets.utils.available_datasets import available_datasets
 from src.tokenizers.services.available_tokenizers import available_tokenizers
-from src.nn.services.loss_fns import available_loss_fns
+from src.loss_fns.services.loss_fns import available_loss_fns
 import torch
 from torch import device
 from src.nn.services.train import train

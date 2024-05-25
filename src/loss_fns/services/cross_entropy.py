@@ -10,6 +10,3 @@ def create_cross_entropy_loss_fn(info: Info):
         return F.cross_entropy(logits, labels, ignore_index=info.pad_idx)
 
     return cross_entropy
-
-
-available_loss_fns = {"cross_entropy": create_cross_entropy_loss_fn}
