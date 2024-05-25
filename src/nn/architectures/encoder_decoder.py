@@ -205,7 +205,7 @@ class EncoderDecoder(Architecture):
             if isinstance(layer, TransformerBlock):
                 decoder_input = layer(decoder_input, dec_mask)
             else:
-                decoder_input = layer(encoder_input, decoder_input, enc_kv_dec_q_mask)
+                decoder_input = layer(decoder_input, encoder_input, enc_kv_dec_q_mask)
 
         x = self.norm(decoder_input)
         x = self.dropout(x)
@@ -218,8 +218,10 @@ class EncoderDecoder(Architecture):
         batch_size, seq_len_enc = encoder_input.shape
         assert batch_size == 1
         assert (encoder_input == strat.pad_id()).sum() == 0
+        bos_idx = strat.bos_id()
+        eos_idx = strat.eos_id()
         dec_input = torch.full(
-            (1, 1), strat.start_id(), dtype=torch.long, device=encoder_input.device
+            (1, 1), strat.bos_id(), dtype=torch.long, device=encoder_input.device
         )
 
         len_enc_not_pad, is_enc_not_pad = process_tokens(encoder_input, strat.pad_id())
@@ -242,6 +244,6 @@ class EncoderDecoder(Architecture):
             dec_output = dec_output[:, -1, :]
             next_token = strat.decode(dec_output)
             dec_input = torch.cat([dec_input, next_token], dim=-1)
-            if (next_token == strat.end_id()).all():
+            if (next_token == eos_idx).all():
                 break
         return dec_input

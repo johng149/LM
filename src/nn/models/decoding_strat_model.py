@@ -15,6 +15,9 @@ class DecodingStrategy:
     def eos_id(self) -> int:
         return self.info.eos_idx
 
+    def bos_id(self) -> int:
+        return self.info.bos_idx
+
     def decode(self, output: Tensor) -> Tensor:
         raise NotImplementedError()
 
