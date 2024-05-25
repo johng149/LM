@@ -114,6 +114,20 @@ class WMT19EnZhProcessor(Processor):
 
         return collate_fn
 
+    @staticmethod
+    def naive_inference_causal(
+        bos_idx: int | Tensor,
+        eos_idx: int | Tensor,
+        en_encoded: Tensor,
+        zh_encoded: Tensor,
+        *args: Tensor
+    ):
+        if not isinstance(bos_idx, Tensor):
+            bos_idx = torch.tensor([bos_idx], dtype=torch.long)
+        if not isinstance(eos_idx, Tensor):
+            eos_idx = torch.tensor([eos_idx], dtype=torch.long)
+        return torch.cat([bos_idx, en_encoded, eos_idx, bos_idx, zh_encoded, eos_idx])
+
     def causal(
         self, dataset_path: str, type: DataloaderType, batch_size: int, **kwargs
     ) -> DataLoader | None:
@@ -198,6 +212,22 @@ class WMT19EnZhProcessor(Processor):
             )
 
         return collate_fn
+
+    @staticmethod
+    def naive_inference_seq2seq(
+        bos_idx: int | Tensor,
+        eos_idx: int | Tensor,
+        en_encoded: Tensor,
+        zh_encoded: Tensor,
+        *args: Tensor
+    ):
+        if not isinstance(bos_idx, Tensor):
+            bos_idx = torch.tensor([bos_idx], dtype=torch.long)
+        if not isinstance(eos_idx, Tensor):
+            eos_idx = torch.tensor([eos_idx], dtype=torch.long)
+        return torch.cat([bos_idx, en_encoded, eos_idx]), torch.cat(
+            [bos_idx, zh_encoded]
+        )
 
     def seq2seq(
         self, dataset_path: str, type: DataloaderType, batch_size: int, **kwargs

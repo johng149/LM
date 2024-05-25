@@ -95,6 +95,27 @@ class Processor:
     ) -> Optional[DataLoader]:
         return None
 
+    @staticmethod
+    def naive_inference_seq2seq(
+        bos_idx: int | Tensor, eos_idx: int | Tensor, *args: Tensor
+    ):
+        """
+        Given the encoder and decoder inputs (which are produced by
+        tokenizing the respective input text), this function returns
+        the encoder and decoder inputs that should be fed to the model
+        for naive inference. It should reflect how the sequences are
+        transformed by the seq2seq collate function
+
+        If bos_idx and eos_idx are tensors, they should be of shape
+        [1], that is, equivalent to torch.tensor([bos_idx], dtype=torch.long)
+        etc
+
+        It uses *args instead of specifying two inputs (one for the encoder
+        and one for the decoder) since we don't know the exact way children
+        classes might implement the collate function
+        """
+        raise NotImplementedError
+
     def seq2seq_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
         return verify_args({}, **kwargs)
 
@@ -130,6 +151,25 @@ class Processor:
         self, dataset_path: str, type: DataloaderType, batch_size: int, **kwargs
     ) -> Optional[DataLoader]:
         return None
+
+    @staticmethod
+    def naive_inference_causal(
+        bos_idx: int | Tensor, eos_idx: int | Tensor, *args: Tensor
+    ):
+        """
+        Given the decoder input (which is produced by tokenizing the
+        input text), this function returns the decoder input that should
+        be fed to the model for naive inference. It should reflect how
+        the sequences are transformed by the causal collate function
+
+        If bos_idx and eos_idx are tensors, they should be of shape
+        [1], that is, equivalent to torch.tensor([bos_idx], dtype=torch.long)
+        etc
+
+        It uses *args instead of specifying one input since we don't know
+        the exact way children classes might implement the collate function
+        """
+        raise NotImplementedError
 
     def causal_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
         return verify_args({}, **kwargs)

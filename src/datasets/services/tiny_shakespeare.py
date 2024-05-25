@@ -81,6 +81,16 @@ class TinyShakespeareProcessor(Processor):
 
         return collate_fn
 
+    @staticmethod
+    def naive_inference_causal(
+        bos_idx: int | Tensor, eos_idx: int | Tensor, dec_input: Tensor, *args: Tensor
+    ):
+        if not isinstance(bos_idx, Tensor):
+            bos_idx = torch.tensor([bos_idx], dtype=torch.long)
+        if not isinstance(eos_idx, Tensor):
+            eos_idx = torch.tensor([eos_idx], dtype=torch.long)
+        return torch.cat([bos_idx, dec_input, eos_idx])
+
     def causal(
         self,
         dataset_path: str,
