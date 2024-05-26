@@ -1,5 +1,6 @@
 import torch
 from torch import Tensor
+from tqdm.auto import tqdm
 
 
 class EmissionMan:
@@ -19,6 +20,7 @@ class DFS:
         self.e_m = None
         self.t_s = None
         self.t_s_len = 0
+        self.pbar = None
 
     def reset(self, transition_matrix, emission_man, target_seq):
         self.acc = []
@@ -28,12 +30,14 @@ class DFS:
         self.t_s = target_seq
         self.t_s_len = len(target_seq)
         self.paths = []
+        self.pbar = tqdm()
 
     def dfs(self, seq_pos: int, row: int, total_len: int, prob: float, path: list):
         if total_len >= self.t_s_len:
             if total_len == self.t_s_len and row >= self.rows:
                 self.acc.append(prob)
                 self.paths.append((path, prob))
+                self.pbar.update(1)
             elif total_len > self.t_s_len:
                 # this should never happen
                 raise ValueError("total_len > target_seq_len")
@@ -66,6 +70,7 @@ class DFS:
         total_len += 1
         path = [row]
         self.dfs(seq_pos, row, total_len, prob, path)
+        self.pbar.close()
         return self.acc, self.paths
 
 
