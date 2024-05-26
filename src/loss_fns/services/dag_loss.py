@@ -27,11 +27,13 @@ class DFS:
         self.e_m = emission_man
         self.t_s = target_seq
         self.t_s_len = len(target_seq)
+        self.paths = []
 
-    def dfs(self, seq_pos: int, row: int, total_len: int, prob: float):
+    def dfs(self, seq_pos: int, row: int, total_len: int, prob: float, path: list):
         if total_len >= self.t_s_len:
             if total_len == self.t_s_len and row >= self.rows:
                 self.acc.append(prob)
+                self.paths.append((path, prob))
             elif total_len > self.t_s_len:
                 # this should never happen
                 raise ValueError("total_len > target_seq_len")
@@ -50,7 +52,8 @@ class DFS:
             new_total_len = total_len + 1
             if new_row <= row:
                 continue
-            self.dfs(new_seq_pos, new_row, new_total_len, new_prob)
+            new_path = path + [new_row]
+            self.dfs(new_seq_pos, new_row, new_total_len, new_prob, new_path)
 
     def search(self):
         seq_pos = 0
@@ -61,8 +64,9 @@ class DFS:
         row += 1
         seq_pos += 1
         total_len += 1
-        self.dfs(seq_pos, row, total_len, prob)
-        return self.acc
+        path = [row]
+        self.dfs(seq_pos, row, total_len, prob, path)
+        return self.acc, self.paths
 
 
 def brute_force_dag_loss(
@@ -96,5 +100,5 @@ def brute_force_dag_loss(
     dfs.reset(
         transition_matrix=transition_matrix, emission_man=em, target_seq=target_sequence
     )
-    acc = dfs.search()
-    return -torch.logsumexp(torch.tensor(acc), dim=0)
+    acc, paths = dfs.search()
+    return -torch.logsumexp(torch.tensor(acc), dim=0), paths
