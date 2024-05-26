@@ -26,7 +26,7 @@ def test_brute_force_dag_loss_multipath():
     emp_log = torch.log(emission_probs)
     t_log = torch.log(transition_matrix)
     target_seq = torch.tensor([0, 1, 2, 5])
-    loss = brute_force_dag_loss(
+    loss, paths = brute_force_dag_loss(
         transition_matrix=t_log,
         emissions=emp_log,
         target_sequence=target_seq,
@@ -68,15 +68,17 @@ def test_brute_force_dag_loss_single_path():
     target_seq = torch.tensor([0, 1, 0, 2, 2, 0])
     t_log = torch.log(transition_matrix)
     emp_log = torch.log(emission_probs)
-    loss = brute_force_dag_loss(
+    loss, paths = brute_force_dag_loss(
         transition_matrix=t_log,
         emissions=emp_log,
         target_sequence=target_seq,
     )
 
-    expected_prob = 5.28223e-4
+    expected_prob = 8.42637e-4
     result = torch.exp(-loss)
     expected_prob = torch.tensor(expected_prob)
+
+    assert torch.allclose(result, expected_prob, atol=1e-5)
 
 
 def test_brute_force_dag_loss_multipath_square_transition_matrix():
@@ -103,7 +105,7 @@ def test_brute_force_dag_loss_multipath_square_transition_matrix():
     emp_log = torch.log(emission_probs)
     t_log = torch.log(transition_matrix)
     target_seq = torch.tensor([0, 1, 2, 5])
-    loss = brute_force_dag_loss(
+    loss, paths = brute_force_dag_loss(
         transition_matrix=t_log,
         emissions=emp_log,
         target_sequence=target_seq,
@@ -146,15 +148,17 @@ def test_brute_force_dag_loss_single_path_square_transition_matrix():
     target_seq = torch.tensor([0, 1, 0, 2, 2, 0])
     t_log = torch.log(transition_matrix)
     emp_log = torch.log(emission_probs)
-    loss = brute_force_dag_loss(
+    loss, paths = brute_force_dag_loss(
         transition_matrix=t_log,
         emissions=emp_log,
         target_sequence=target_seq,
     )
 
-    expected_prob = 5.28223e-4
+    expected_prob = 8.42637e-4
     result = torch.exp(-loss)
     expected_prob = torch.tensor(expected_prob)
+
+    assert torch.allclose(result, expected_prob, atol=1e-5)
 
 
 # def test_dag_loss_multipath():
@@ -165,6 +169,7 @@ def test_brute_force_dag_loss_single_path_square_transition_matrix():
 #             [0, 0, 0, 0.2, 0, 0.8],
 #             [0, 0, 0, 0, 0.5, 0.5],
 #             [0, 0, 0, 0, 0, 1],
+#             [0, 0, 0, 0, 0, 0],
 #         ]
 #     )
 #     emission_probs = torch.tensor(
@@ -180,3 +185,19 @@ def test_brute_force_dag_loss_single_path_square_transition_matrix():
 #     emp_log = torch.log(emission_probs)
 #     t_log = torch.log(transition_matrix)
 #     target_seq = torch.tensor([0, 1, 2, 5])
+
+#     emp_log_batch = emp_log.unsqueeze(0)
+#     t_log_batch = t_log.unsqueeze(0)
+#     target_seq_batch = target_seq.unsqueeze(0)
+
+#     dp = dag_loss_raw(
+#         targets=target_seq_batch,
+#         transition_matrix=t_log_batch,
+#         emission_probs=emp_log_batch,
+#     )
+
+#     target_len = torch.tensor([4])
+#     vertex_len = torch.tensor([6])
+
+#     result = process_dp(dp, target_len, vertex_len)
+#     expected_prob = 0.1191456
