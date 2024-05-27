@@ -78,3 +78,20 @@ def dag_loss(targets, transition_matrix, emission_probs, target_lens, vertex_len
     values = process_dp(dp, target_lens, vertex_lens)
     values = values / target_lens.unsqueeze(-1)
     return -torch.mean(values)
+
+
+def dag_loss_adapter(model_out, target_info):
+    """
+    Just a wrapper around `dag_loss` to support how the training loop handles
+    calling loss functions.
+
+    @param model_out: the output from model, a tuple of transition matrix and
+        emission matrix
+    @param target_info: a tuple of vertex_lens, target_lens, targets
+    @return: the loss
+    """
+    transition_matrix, emission_probs = model_out
+    vertex_lens, target_lens, targets = target_info
+    return dag_loss(
+        targets, transition_matrix, emission_probs, target_lens, vertex_lens
+    )
