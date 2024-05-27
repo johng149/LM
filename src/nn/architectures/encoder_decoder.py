@@ -214,7 +214,6 @@ class EncoderDecoder(Architecture):
     def naive_inference(
         self, strat: AutoregressiveStrategy, max_len: int, encoder_input: Tensor, *args
     ) -> Tensor:
-        encoder_input = args[0]
         batch_size, seq_len_enc = encoder_input.shape
         assert batch_size == 1
         assert (encoder_input == strat.pad_id()).sum() == 0
