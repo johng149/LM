@@ -195,6 +195,55 @@ class Processor:
     def supports_causal(self) -> bool:
         return self.collate_causal_fn() is not None
 
+    def seq2seq_dag(
+        self, dataset_path: str, type: DataloaderType, batch_size: int, **kwargs
+    ) -> Optional[DataLoader]:
+        return None
+
+    @staticmethod
+    def naive_inference_seq2seq_dag(
+        bos_idx: int | Tensor, eos_idx: int | Tensor, *args: Tensor
+    ):
+        raise NotImplementedError
+
+    def seq2seq_dag_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
+        return verify_args({}, **kwargs)
+
+    def collate_seq2seq_dag_fn(self, coeff_fn: Callable[[], int]) -> Optional[
+        Callable[
+            [Any, int, int, int],
+            Tuple[
+                Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]
+            ],
+        ]
+    ]:
+        """
+        The DAG dataset is a bit different from the regular seq2seq dataset
+        We take in the data batch, the bos_idx, eos_idx, and pad_idx
+        and return a tuple of tensors. The decoder input for the model
+        depends on the size of the encoder input and the output of the
+        coeff_fn function.
+
+        The output is:
+        encoder_input,
+        enc_pad_mask,
+        decoder_input,
+        dec_pad_mask,
+        env_kv_dec_q_mask,
+        vertex_lens,
+        target_lens,
+        targets
+
+        where vertex_lens, target_lens, and targets are used to calculate
+        the loss for the model ( and since the codebase was built with the
+        assumption that only the final element is used to calculate loss
+        we need to put these 3 in a tuple together)
+        """
+        return None
+
+    def supports_seq2seq_dag(self) -> bool:
+        return self.collate_seq2seq_dag_fn() is not None
+
     def format_dataset_path(self, dataset_path: str, type: DataloaderType) -> Path:
         dataset_path = Path(dataset_path)
         match type:
