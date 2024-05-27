@@ -16,4 +16,4 @@ def test_architecture_naive_decode_not_implemented():
     x = torch.tensor([[1, 2, 3]])
     strat = MagicMock()
     strat.pad_id.return_value = 0
-    assert arch.naive_inference(x, strat=strat, max_len=max_len) is None
+    assert arch.naive_inference(strat=strat) is None
