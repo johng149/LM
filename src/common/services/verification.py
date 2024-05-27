@@ -2,7 +2,7 @@ from src.common.models.args_info import ArgsInfo, ArgInfo
 from src.common.models.args_relation import ArgRelations, ArgRelation
 from src.common.models.param_level import ParamLevel
 from src.common.models.verification import Verification, Error, Warning
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 
 def unknown_arg_msg(arg: str) -> str:
@@ -61,22 +61,39 @@ def verify_args(info: ArgsInfo, **kwargs) -> Tuple[List[Verification], bool]:
                 if arg not in kwargs:
                     result.append(Error(missing_arg_msg(arg)))
                     hasError = True
-                elif not type(kwargs[arg]) == expected_type:
+                elif expected_type == Callable and not callable(kwargs[arg]):
+                    result.append(Error(type_mismatch_msg(arg, expected_type)))
+                    hasError = True
+                elif (
+                    expected_type != Callable and not type(kwargs[arg]) == expected_type
+                ):
                     result.append(Error(type_mismatch_msg(arg, expected_type)))
                     hasError = True
             case ParamLevel.SUGGESTED:
                 # similar to optional, but we will warn if the argument is missing
                 if arg not in kwargs:
                     result.append(Warning(missing_suggested_arg_msg(arg)))
-                elif not type(kwargs[arg]) == expected_type:
+                elif expected_type == Callable and not callable(kwargs[arg]):
+                    result.append(Error(type_mismatch_msg(arg, expected_type)))
+                    hasError = True
+                elif (
+                    expected_type != Callable and not type(kwargs[arg]) == expected_type
+                ):
                     result.append(Error(type_mismatch_msg(arg, expected_type)))
                     hasError = True
             case ParamLevel.OPTIONAL:
                 # optional means that if the argument is present, it should be of the correct type
                 # but if it is not present, that is fine
-                if arg in kwargs and not type(kwargs[arg]) == expected_type:
-                    result.append(Error(type_mismatch_msg(arg, expected_type)))
-                    hasError = True
+                if arg in kwargs:
+                    if expected_type == Callable and not callable(kwargs[arg]):
+                        result.append(Error(type_mismatch_msg(arg, expected_type)))
+                        hasError = True
+                    elif (
+                        expected_type != Callable
+                        and not type(kwargs[arg]) == expected_type
+                    ):
+                        result.append(Error(type_mismatch_msg(arg, expected_type)))
+                        hasError = True
     return result, hasError
 
 

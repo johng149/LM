@@ -11,6 +11,7 @@ from src.common.models.args_info import ArgInfo
 from src.common.models.args_relation import ArgRelation
 from unittest.mock import patch
 from unittest import mock
+from typing import Callable
 
 # prior reading:
 # https://engineeringblog.yelp.com/2015/02/assert_called_once-threat-or-menace.html
@@ -84,6 +85,33 @@ def test_verify_args_type_mismatch_arg_optional(
 @patch("src.common.services.verification.missing_arg_msg", wraps=miss)
 @patch("src.common.services.verification.type_mismatch_msg", wraps=typmm)
 @patch("src.common.services.verification.missing_suggested_arg_msg", wraps=miss_sugg)
+def test_verify_args_type_mismatch_arg_optional_callable(
+    mock_miss_sugg, mock_typmm, mock_miss, mock_unk
+):
+    arg_name = "some_arg"
+    arg_type = Callable
+    info = {
+        arg_name: ArgInfo(
+            level=ParamLevel.OPTIONAL, description="some description", type=arg_type
+        )
+    }
+    kwargs = {arg_name: "some_value"}
+    result, hasError = verify_args(info, **kwargs)
+    assert hasError
+    assert len(result) == 1
+    assert isinstance(result[0], Error)
+    assert result[0].message == typmm(arg_name, arg_type)
+    assert mock_miss_sugg.call_count == 0
+    assert mock_typmm.call_count == 1
+    assert mock_miss.call_count == 0
+    assert mock_unk.call_count == 0
+    assert mock_typmm.call_args == mock.call(arg_name, arg_type)
+
+
+@patch("src.common.services.verification.unknown_arg_msg", wraps=unk)
+@patch("src.common.services.verification.missing_arg_msg", wraps=miss)
+@patch("src.common.services.verification.type_mismatch_msg", wraps=typmm)
+@patch("src.common.services.verification.missing_suggested_arg_msg", wraps=miss_sugg)
 def test_verify_args_type_mismatch_arg_suggested(
     mock_miss_sugg, mock_typmm, mock_miss, mock_unk
 ):
@@ -111,11 +139,65 @@ def test_verify_args_type_mismatch_arg_suggested(
 @patch("src.common.services.verification.missing_arg_msg", wraps=miss)
 @patch("src.common.services.verification.type_mismatch_msg", wraps=typmm)
 @patch("src.common.services.verification.missing_suggested_arg_msg", wraps=miss_sugg)
+def test_verify_args_type_mismatch_arg_suggested_callable(
+    mock_miss_sugg, mock_typmm, mock_miss, mock_unk
+):
+    arg_name = "some_arg"
+    arg_type = Callable
+    info = {
+        arg_name: ArgInfo(
+            level=ParamLevel.SUGGESTED, description="some description", type=arg_type
+        )
+    }
+    kwargs = {arg_name: "some_value"}
+    result, hasError = verify_args(info, **kwargs)
+    assert hasError
+    assert len(result) == 1
+    assert isinstance(result[0], Error)
+    assert result[0].message == typmm(arg_name, arg_type)
+    assert mock_miss_sugg.call_count == 0
+    assert mock_typmm.call_count == 1
+    assert mock_miss.call_count == 0
+    assert mock_unk.call_count == 0
+    assert mock_typmm.call_args == mock.call(arg_name, arg_type)
+
+
+@patch("src.common.services.verification.unknown_arg_msg", wraps=unk)
+@patch("src.common.services.verification.missing_arg_msg", wraps=miss)
+@patch("src.common.services.verification.type_mismatch_msg", wraps=typmm)
+@patch("src.common.services.verification.missing_suggested_arg_msg", wraps=miss_sugg)
 def test_verify_args_type_mismatch_arg_required(
     mock_miss_sugg, mock_typmm, mock_miss, mock_unk
 ):
     arg_name = "some_arg"
     arg_type = int
+    info = {
+        arg_name: ArgInfo(
+            level=ParamLevel.REQUIRED, description="some description", type=arg_type
+        )
+    }
+    kwargs = {arg_name: "some_value"}
+    result, hasError = verify_args(info, **kwargs)
+    assert hasError
+    assert len(result) == 1
+    assert isinstance(result[0], Error)
+    assert result[0].message == typmm(arg_name, arg_type)
+    assert mock_miss_sugg.call_count == 0
+    assert mock_typmm.call_count == 1
+    assert mock_miss.call_count == 0
+    assert mock_unk.call_count == 0
+    assert mock_typmm.call_args == mock.call(arg_name, arg_type)
+
+
+@patch("src.common.services.verification.unknown_arg_msg", wraps=unk)
+@patch("src.common.services.verification.missing_arg_msg", wraps=miss)
+@patch("src.common.services.verification.type_mismatch_msg", wraps=typmm)
+@patch("src.common.services.verification.missing_suggested_arg_msg", wraps=miss_sugg)
+def test_verify_args_type_mismatch_arg_required_callable(
+    mock_miss_sugg, mock_typmm, mock_miss, mock_unk
+):
+    arg_name = "some_arg"
+    arg_type = Callable
     info = {
         arg_name: ArgInfo(
             level=ParamLevel.REQUIRED, description="some description", type=arg_type
@@ -244,6 +326,54 @@ def test_verify_args_successful(mock_miss_sugg, mock_typmm, mock_miss, mock_unk)
         arg_optional_name: 1,
         arg_required_name: "some_value",
         arg_suggested_name: 1.0,
+    }
+    result, hasError = verify_args(info, **kwargs)
+    assert not hasError
+    assert len(result) == 0
+    assert mock_miss_sugg.call_count == 0
+    assert mock_typmm.call_count == 0
+    assert mock_miss.call_count == 0
+    assert mock_unk.call_count == 0
+
+
+@patch("src.common.services.verification.unknown_arg_msg", wraps=unk)
+@patch("src.common.services.verification.missing_arg_msg", wraps=miss)
+@patch("src.common.services.verification.type_mismatch_msg", wraps=typmm)
+@patch("src.common.services.verification.missing_suggested_arg_msg", wraps=miss_sugg)
+def test_verify_args_successful_callable(
+    mock_miss_sugg, mock_typmm, mock_miss, mock_unk
+):
+    arg_optional_name = "some_optional_arg"
+    arg_optional_type = Callable
+    arg_required_name = "some_required_arg"
+    arg_required_type = Callable
+    arg_suggested_name = "some_suggested_arg"
+    arg_suggested_type = Callable
+    info = {
+        arg_optional_name: ArgInfo(
+            level=ParamLevel.OPTIONAL,
+            description="some description",
+            type=arg_optional_type,
+        ),
+        arg_required_name: ArgInfo(
+            level=ParamLevel.REQUIRED,
+            description="some description",
+            type=arg_required_type,
+        ),
+        arg_suggested_name: ArgInfo(
+            level=ParamLevel.SUGGESTED,
+            description="some description",
+            type=arg_suggested_type,
+        ),
+    }
+
+    def suggested_example():
+        return 3
+
+    kwargs = {
+        arg_optional_name: lambda x: x,
+        arg_required_name: lambda x: x,
+        arg_suggested_name: suggested_example,
     }
     result, hasError = verify_args(info, **kwargs)
     assert not hasError
