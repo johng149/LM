@@ -1,5 +1,5 @@
 from torch.nn import Module
-from src.nn.models.decoding_strat_model import AutoregressiveStrategy
+from src.nn.models.decoding_strat_model import DecodingStrategy
 from torch import Tensor
 from src.common.models.verification import Verification
 from typing import List, Tuple
@@ -32,16 +32,11 @@ class Architecture(Module):
         v2, e2 = verify_arg_relations({}, **kwargs)
         return v1, e1, v2, e2
 
-    def naive_inference(
-        self, *args, strat: AutoregressiveStrategy, max_len: int
-    ) -> Tensor:
+    def naive_inference(self, strat: DecodingStrategy, *args) -> Tensor:
         """
-        Runs inference assuming that `x` has batch size 1, and contains
-        no padding tokens.
+        Runs inference assuming batch size is 1
 
-        @param x: the input tensor
         @param strat: the decoding strategy to use
-        @param max_len: the maximum length of the output tensor
         @return: the output tensor
         """
         return None

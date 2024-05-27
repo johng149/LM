@@ -212,7 +212,7 @@ class EncoderDecoder(Architecture):
         return self.classifier(x)
 
     def naive_inference(
-        self, *args, strat: AutoregressiveStrategy, max_len: int
+        self, strat: AutoregressiveStrategy, max_len: int, encoder_input: Tensor, *args
     ) -> Tensor:
         encoder_input = args[0]
         batch_size, seq_len_enc = encoder_input.shape

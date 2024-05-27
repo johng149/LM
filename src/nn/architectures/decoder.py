@@ -138,9 +138,8 @@ class Decoder(Architecture):
         return self.classifier(x)
 
     def naive_inference(
-        self, *args, strat: AutoregressiveStrategy, max_len: int
+        self, strat: AutoregressiveStrategy, max_len: int, x: Tensor, *args
     ) -> Tensor:
-        x = args[0]
         batch_size, seq_len = x.shape
         assert batch_size == 1
         assert (x == strat.pad_id()).sum() == 0
