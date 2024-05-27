@@ -2,6 +2,7 @@ from src.loss_fns.services.dag_loss import brute_force_dag_loss
 from src.loss_fns.services.dag_loss_efficient import dag_loss_raw, process_dp
 import torch
 import numpy as np
+from src.nn.utils.dag_masking import masking
 
 
 def test_brute_force_dag_loss_multipath():
@@ -514,69 +515,234 @@ def test_dag_loss_rand_batch_various_lengths():
     assert torch.allclose(result, expected_probs, atol=1e-3)
 
 
-# def test_dag_loss_rand_batch_various_lengths_padded_small():
-#     # FIXME: This test is failing because the padding is not being handled correctly
-#     torch.manual_seed(0)
-#     np.random.seed(0)
+def test_dag_loss_rand_batch3():
+    torch.manual_seed(0)
+    np.random.seed(0)
 
-#     num_classes = 3
+    num_classes = 3
+    target_seq_len = 10
+    vertex_len = 15
+    batch_size = 3
+    vertex_lens = torch.tensor([vertex_len for _ in range(batch_size)])
+    device = "cpu"
 
-#     transition_matrices = []
-#     emission_probs = []
-#     targets = []
+    transition_matrix = torch.rand(batch_size, vertex_len, vertex_len)
+    emission_probs = torch.rand(batch_size, vertex_len, num_classes)
+    target_seq = torch.randint(0, num_classes, (batch_size, target_seq_len))
 
-#     various_lengths = [(3, 4), (2, 4), (2, 3), (4, 5)]
+    t_log = torch.log(transition_matrix)
+    emp_log = torch.log(emission_probs)
 
-#     batch_size = 4
-#     for i in range(batch_size):
-#         target_seq_len = various_lengths[i][0]
-#         vertex_len = various_lengths[i][1]
+    dp_brutes = []
+    for i in range(batch_size):
+        current_t = transition_matrix[i]
+        current_emp = emission_probs[i]
+        current_t = torch.triu(current_t, diagonal=1)
+        current_t = torch.log(current_t)
+        current_emp = torch.log(current_emp)
+        dp, _ = brute_force_dag_loss(
+            transition_matrix=current_t,
+            emissions=current_emp,
+            target_sequence=target_seq[i],
+        )
+        dp_brutes.append(dp)
 
-#         transition_matrix = torch.rand(vertex_len, vertex_len)
-#         transition_matrix = torch.triu(transition_matrix, diagonal=1)
-#         emission_prob = torch.rand(vertex_len, num_classes)
-#         target_seq = torch.randint(0, num_classes, (target_seq_len,))
-#         t_log = torch.log(transition_matrix)
-#         emp_log = torch.log(emission_prob)
+    dp_brutes = torch.stack(dp_brutes)
 
-#         transition_matrices.append(t_log)
-#         emission_probs.append(emp_log)
-#         targets.append(target_seq)
+    m, r = masking(
+        batch_size=batch_size,
+        vertices=vertex_len,
+        vertex_lens=vertex_lens,
+        device=device,
+    )
 
-#     dp_brutes = []
-#     for i in range(batch_size):
-#         dp, _ = brute_force_dag_loss(
-#             transition_matrix=transition_matrices[i],
-#             emissions=emission_probs[i],
-#             target_sequence=targets[i],
-#         )
-#         dp_brutes.append(dp)
+    t_log = t_log.masked_fill(~m, float("-inf"))
+    t_log = t_log.masked_fill(r, float("-inf"))
 
-#     dp_brutes = torch.stack(dp_brutes)
+    dp = dag_loss_raw(
+        targets=target_seq,
+        transition_matrix=t_log,
+        emission_probs=emp_log,
+    )
 
-#     transition_matrices = torch.nested.nested_tensor(transition_matrices)
-#     emission_probs = torch.nested.nested_tensor(emission_probs)
-#     targets = torch.nested.nested_tensor(targets)
+    result = process_dp(
+        dp,
+        torch.tensor([target_seq_len for _ in range(batch_size)], device=device),
+        vertex_lens,
+    )
 
-#     transition_matrices = torch.nested.to_padded_tensor(
-#         transition_matrices, padding=100
-#     )
-#     transition_matrices = torch.tri
-#     emission_probs = torch.nested.to_padded_tensor(emission_probs, padding=100)
-#     targets = torch.nested.to_padded_tensor(targets, padding=0)
+    result = result.flatten()
 
-#     dp = dag_loss_raw(
-#         targets=targets,
-#         transition_matrix=transition_matrices,
-#         emission_probs=emission_probs,
-#     )
+    expected_probs = torch.exp(-dp_brutes)
+    result = torch.exp(result)
 
-#     target_lens = torch.tensor([various_lengths[i][0] for i in range(batch_size)])
-#     vertex_lens = torch.tensor([various_lengths[i][1] for i in range(batch_size)])
+    assert torch.allclose(result, expected_probs, atol=1e-3)
 
-#     result = process_dp(dp, target_lens, vertex_lens)
 
-#     expected_probs = torch.exp(-dp_brutes)
-#     result = torch.exp(result)
+def test_dag_loss_rand_batch_various_lengths_padded_small():
+    torch.manual_seed(0)
+    np.random.seed(0)
 
-#     assert torch.allclose(result, expected_probs, atol=1e-3)
+    num_classes = 3
+    device = "cpu"
+    transition_matrices = []
+    emission_probs = []
+    targets = []
+
+    various_lengths = [(3, 4), (2, 4), (2, 3), (4, 5)]
+
+    batch_size = 4
+    for i in range(batch_size):
+        target_seq_len = various_lengths[i][0]
+        vertex_len = various_lengths[i][1]
+
+        transition_matrix = torch.rand(vertex_len, vertex_len)
+        transition_matrix = torch.triu(transition_matrix, diagonal=1)
+        emission_prob = torch.rand(vertex_len, num_classes)
+        target_seq = torch.randint(0, num_classes, (target_seq_len,))
+        t_log = torch.log(transition_matrix)
+        emp_log = torch.log(emission_prob)
+
+        transition_matrices.append(t_log)
+        emission_probs.append(emp_log)
+        targets.append(target_seq)
+
+    dp_brutes = []
+    for i in range(batch_size):
+        dp, _ = brute_force_dag_loss(
+            transition_matrix=transition_matrices[i],
+            emissions=emission_probs[i],
+            target_sequence=targets[i],
+        )
+        dp_brutes.append(dp)
+
+    dp_brutes = torch.stack(dp_brutes)
+
+    transition_matrices = torch.nested.nested_tensor(transition_matrices)
+    emission_probs = torch.nested.nested_tensor(emission_probs)
+    targets = torch.nested.nested_tensor(targets)
+
+    transition_matrices = torch.nested.to_padded_tensor(
+        transition_matrices, padding=100
+    )
+    emission_probs = torch.nested.to_padded_tensor(emission_probs, padding=100)
+    targets = torch.nested.to_padded_tensor(targets, padding=0)
+
+    vertex_lens = torch.tensor([various_lengths[i][1] for i in range(batch_size)])
+    target_lens = torch.tensor([various_lengths[i][0] for i in range(batch_size)])
+
+    batch_size, max_vertex_len, _ = transition_matrices.shape
+
+    m, r = masking(
+        batch_size=batch_size,
+        vertices=max_vertex_len,
+        vertex_lens=vertex_lens,
+        device=device,
+    )
+
+    transition_matrices = transition_matrices.masked_fill(~m, float("-inf"))
+    transition_matrices = transition_matrices.masked_fill(r, float("-inf"))
+
+    dp = dag_loss_raw(
+        targets=targets,
+        transition_matrix=transition_matrices,
+        emission_probs=emission_probs,
+    )
+
+    result = process_dp(dp, target_lens, vertex_lens)
+
+    result = result.flatten()
+
+    expected_probs = torch.exp(-dp_brutes)
+    result = torch.exp(result)
+
+    assert torch.allclose(result, expected_probs, atol=1e-3)
+
+
+def test_dag_loss_rand_batch_various_lengths_padded():
+    torch.manual_seed(0)
+    np.random.seed(0)
+
+    num_classes = 3
+    device = "cpu"
+    transition_matrices = []
+    emission_probs = []
+    targets = []
+
+    various_lengths = [
+        (10, 13),
+        (11, 14),
+        (4, 9),
+        (5, 10),
+        (3, 4),
+        (2, 4),
+        (2, 3),
+        (4, 5),
+    ]
+
+    batch_size = len(various_lengths)
+    for i in range(batch_size):
+        target_seq_len = various_lengths[i][0]
+        vertex_len = various_lengths[i][1]
+
+        transition_matrix = torch.rand(vertex_len, vertex_len)
+        transition_matrix = torch.triu(transition_matrix, diagonal=1)
+        emission_prob = torch.rand(vertex_len, num_classes)
+        target_seq = torch.randint(0, num_classes, (target_seq_len,))
+        t_log = torch.log(transition_matrix)
+        emp_log = torch.log(emission_prob)
+
+        transition_matrices.append(t_log)
+        emission_probs.append(emp_log)
+        targets.append(target_seq)
+
+    dp_brutes = []
+    for i in range(batch_size):
+        dp, _ = brute_force_dag_loss(
+            transition_matrix=transition_matrices[i],
+            emissions=emission_probs[i],
+            target_sequence=targets[i],
+        )
+        dp_brutes.append(dp)
+
+    dp_brutes = torch.stack(dp_brutes)
+
+    transition_matrices = torch.nested.nested_tensor(transition_matrices)
+    emission_probs = torch.nested.nested_tensor(emission_probs)
+    targets = torch.nested.nested_tensor(targets)
+
+    transition_matrices = torch.nested.to_padded_tensor(
+        transition_matrices, padding=100
+    )
+    emission_probs = torch.nested.to_padded_tensor(emission_probs, padding=100)
+    targets = torch.nested.to_padded_tensor(targets, padding=0)
+
+    vertex_lens = torch.tensor([various_lengths[i][1] for i in range(batch_size)])
+    target_lens = torch.tensor([various_lengths[i][0] for i in range(batch_size)])
+
+    batch_size, max_vertex_len, _ = transition_matrices.shape
+
+    m, r = masking(
+        batch_size=batch_size,
+        vertices=max_vertex_len,
+        vertex_lens=vertex_lens,
+        device=device,
+    )
+
+    transition_matrices = transition_matrices.masked_fill(~m, float("-inf"))
+    transition_matrices = transition_matrices.masked_fill(r, float("-inf"))
+
+    dp = dag_loss_raw(
+        targets=targets,
+        transition_matrix=transition_matrices,
+        emission_probs=emission_probs,
+    )
+
+    result = process_dp(dp, target_lens, vertex_lens)
+
+    result = result.flatten()
+
+    expected_probs = torch.exp(-dp_brutes)
+    result = torch.exp(result)
+
+    assert torch.allclose(result, expected_probs, atol=1e-3)
