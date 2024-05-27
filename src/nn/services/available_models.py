@@ -31,7 +31,7 @@ def model_type_to_processor_supports(
         case "seq2seq":
             return p.supports_seq2seq
         case _:
-            return False
+            return lambda: False
 
 
 def model_type_to_processor_verify_args(
