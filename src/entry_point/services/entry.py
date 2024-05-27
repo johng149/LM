@@ -24,6 +24,7 @@ def load(
     checkpoint_path: str,
     save_every: int,
     test_every: int,
+    optim_maker: lambda x: getattr(importlib.import_module("torch.optim"), x),
 ):
 
     loss_fn = jd["loss_fn"]
@@ -106,7 +107,7 @@ def load(
     model = available_models[model_type](**model_kwargs)
     model = model.to(device)
 
-    optim_class = getattr(importlib.import_module("torch.optim"), optimizer)
+    optim_class = optim_maker(optimizer)
     optimizer = optim_class(model.parameters(), **optimizer_kwargs)
 
     l = available_loss_fns[loss_fn](tokenizer)
