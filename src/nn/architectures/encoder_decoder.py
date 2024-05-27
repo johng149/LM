@@ -17,7 +17,7 @@ from src.datasets.utils.masking import (
     self_attn_pad_mask,
     process_tokens,
     cross_attn_pad_mask,
-    combine_masks_before_flip,
+    combine_masks,
 )
 
 
@@ -235,7 +235,7 @@ class EncoderDecoder(Architecture):
             len_dec_not_pad, is_dec_not_pad = process_tokens(dec_slice, strat.pad_id())
             dec_pad_mask = self_attn_pad_mask(is_dec_not_pad)
             dec_causal_mask = causal_self_attn_mask(dec_slice)
-            dec_mask = combine_masks_before_flip(dec_causal_mask, dec_pad_mask)
+            dec_mask = combine_masks(dec_causal_mask, dec_pad_mask)
             enc_kv_dec_q_mask = cross_attn_pad_mask(is_enc_not_pad, is_dec_not_pad)
 
             dec_output = self.forward_decoder(

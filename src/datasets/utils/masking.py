@@ -63,7 +63,7 @@ def causal_self_attn_mask(samples: Tensor):
 
 
 # accepts arbitrary number of masks
-def combine_masks_before_flip(*masks: Tensor) -> Tensor:
+def combine_masks(*masks: Tensor) -> Tensor:
     """
     Combine multiple masks into a single mask.
 

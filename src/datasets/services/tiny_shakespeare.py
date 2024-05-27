@@ -14,7 +14,7 @@ from src.datasets.utils.masking import (
     causal_self_attn_mask,
     self_attn_pad_mask,
     process_tokens,
-    combine_masks_before_flip,
+    combine_masks,
 )
 
 
@@ -75,7 +75,7 @@ class TinyShakespeareProcessor(Processor):
             len_not_pad, is_not_pad = process_tokens(source, pad_idx)
             source_causal_mask = causal_self_attn_mask(source)
             source_pad_mask = self_attn_pad_mask(is_not_pad)
-            source_mask = combine_masks_before_flip(source_causal_mask, source_pad_mask)
+            source_mask = combine_masks(source_causal_mask, source_pad_mask)
 
             return source, source_mask, target
 

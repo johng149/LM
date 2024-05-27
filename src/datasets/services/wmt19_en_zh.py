@@ -15,7 +15,7 @@ from src.datasets.utils.masking import (
     self_attn_pad_mask,
     process_tokens,
     cross_attn_pad_mask,
-    combine_masks_before_flip,
+    combine_masks,
 )
 
 
@@ -108,7 +108,7 @@ class WMT19EnZhProcessor(Processor):
             len_not_pad, is_not_pad = process_tokens(source, pad_idx)
             source_causal_mask = causal_self_attn_mask(source)
             source_pad_mask = self_attn_pad_mask(is_not_pad)
-            source_mask = combine_masks_before_flip(source_causal_mask, source_pad_mask)
+            source_mask = combine_masks(source_causal_mask, source_pad_mask)
 
             return source, source_mask, target
 
@@ -199,7 +199,7 @@ class WMT19EnZhProcessor(Processor):
             enc_pad_mask = self_attn_pad_mask(is_enc_not_pad)
             dec_pad_mask = self_attn_pad_mask(is_dec_not_pad)
             dec_causal_mask = causal_self_attn_mask(decoder_input)
-            dec_mask = combine_masks_before_flip(dec_causal_mask, dec_pad_mask)
+            dec_mask = combine_masks(dec_causal_mask, dec_pad_mask)
             enc_kv_dec_q_mask = cross_attn_pad_mask(is_enc_not_pad, is_dec_not_pad)
 
             return (

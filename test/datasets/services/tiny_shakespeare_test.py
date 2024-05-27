@@ -10,7 +10,7 @@ from src.datasets.utils.masking import (
     causal_self_attn_mask,
     self_attn_pad_mask,
     process_tokens,
-    combine_masks_before_flip,
+    combine_masks,
 )
 
 
@@ -75,7 +75,7 @@ def test_tiny_shakespeare_collate_causal():
     expected_source_mask_causal = causal_self_attn_mask(expected_source)
     _, is_not_pad = process_tokens(expected_source, pad_idx)
     expected_source_mask_pad = self_attn_pad_mask(is_not_pad)
-    expected_source_mask = combine_masks_before_flip(
+    expected_source_mask = combine_masks(
         expected_source_mask_causal, expected_source_mask_pad
     )
     expected_target = torch.tensor([[1, 2, 3, eos_idx, pad_idx], [4, 5, 6, 4, eos_idx]])
