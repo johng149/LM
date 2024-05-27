@@ -256,3 +256,113 @@ class WMT19EnZhProcessor(Processor):
             },
             **kwargs
         )
+
+    def collate_seq2seq_dag_fn(self, coeff_fn: Callable[[], int]) -> Callable[
+        [Any, int, int, int],
+        Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]],
+    ]:
+        def collate_fn(
+            batch: List[dict],
+            bos_idx: int,
+            eos_idx: int,
+            pad_idx: int,
+        ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+            bos_idx = torch.tensor([bos_idx], dtype=torch.long)
+            eos_idx = torch.tensor([eos_idx], dtype=torch.long)
+
+            encoder_input = []
+            decoder_input = []
+            target = []
+            vertex_lens = []
+            target_lens = []
+            for x in batch:
+                en = x["en_encoded"]
+                zh = x["zh_encoded"]
+                if not isinstance(en, Tensor):
+                    en = torch.tensor(en)
+                if not isinstance(zh, Tensor):
+                    zh = torch.tensor(zh)
+                concatenated = torch.cat([bos_idx, en, eos_idx])
+                encoder_input.append(concatenated)
+                targ = torch.cat([bos_idx, zh, eos_idx])
+                target_lens.append(len(targ))
+                target.append(targ)
+                encoder_len = len(concatenated)
+                vertex_len = encoder_len * coeff_fn()
+                dec = torch.arange(0, vertex_len, dtype=torch.long)
+                decoder_input.append(dec)
+                vertex_lens.append(vertex_len)
+
+            encoder_input = torch.nested.nested_tensor(encoder_input)
+            decoder_input = torch.nested.nested_tensor(decoder_input)
+            target = torch.nested.nested_tensor(target)
+            vertex_lens = torch.tensor(vertex_lens)
+            target_lens = torch.tensor(target_lens)
+
+            encoder_input = torch.nested.to_padded_tensor(encoder_input, pad_idx)
+            decoder_input = torch.nested.to_padded_tensor(decoder_input, pad_idx)
+            target = torch.nested.to_padded_tensor(target, pad_idx)
+
+            len_enc_not_pad, is_enc_not_pad = process_tokens(encoder_input, pad_idx)
+            len_dec_not_pad, is_dec_not_pad = process_tokens(decoder_input, pad_idx)
+            enc_pad_mask = self_attn_pad_mask(is_enc_not_pad)
+            dec_pad_mask = self_attn_pad_mask(is_dec_not_pad)
+            env_kv_dec_q_mask = cross_attn_pad_mask(is_enc_not_pad, is_dec_not_pad)
+
+            return (
+                encoder_input,
+                enc_pad_mask,
+                decoder_input,
+                dec_pad_mask,
+                env_kv_dec_q_mask,
+                (vertex_lens, target_lens, target),
+            )
+
+        return collate_fn
+
+    def naive_inference_seq2seq_dag(
+        bos_idx: int | Tensor, eos_idx: int | Tensor, en_encoded: Tensor, *args: Tensor
+    ):
+        if not isinstance(bos_idx, Tensor):
+            bos_idx = torch.tensor([bos_idx], dtype=torch.long)
+        if not isinstance(eos_idx, Tensor):
+            eos_idx = torch.tensor([eos_idx], dtype=torch.long)
+        return torch.cat([bos_idx, en_encoded, eos_idx])
+
+    def seq2seq_dag(
+        self,
+        dataset_path: str,
+        type: DataloaderType,
+        batch_size: int,
+        coeff_fn: Callable[[], int],
+        **kwargs
+    ) -> DataLoader | None:
+        path = self.format_dataset_path(dataset_path, type)
+
+        data = load_from_disk(path)
+        collate = self.collate_seq2seq_dag_fn(coeff_fn)
+        dl = DataLoader(
+            data,
+            batch_size=batch_size,
+            collate_fn=lambda x: collate(x, self.bos_idx, self.eos_idx, self.pad_idx),
+            shuffle=True,
+        )
+
+        return dl
+
+    def seq2seq_dag_verify_args(self, **kwargs) -> Tuple[List[Verification], bool]:
+        return verify_args(
+            {
+                "batch_size": ArgInfo(
+                    level=ParamLevel.REQUIRED,
+                    type=int,
+                    description="The batch size for the DataLoader",
+                ),
+                "coeff_fn": ArgInfo(
+                    level=ParamLevel.REQUIRED,
+                    type=Callable,
+                    description="The function to calculate the coefficient",
+                ),
+            },
+            **kwargs
+        )
