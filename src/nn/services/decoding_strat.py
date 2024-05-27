@@ -15,9 +15,8 @@ class GreedyAutoregressiveStrategy(AutoregressiveStrategy):
 
 
 class GreedyDAGStrategy(DAGStrategy):
-    def __init__(self, info=None, device=None):
-        self.info = info  # we don't actually need the info for this strategy
-        self.device = device
+    def __init__(self, info, device):
+        super().__init__(info, device)
 
     def decode_single(self, transition: Tensor, emissions: Tensor):
         vertex_count, vocab_size = emissions.shape
@@ -35,9 +34,7 @@ class GreedyDAGStrategy(DAGStrategy):
                 break
             output.append(tokens[i].item())
 
-        return torch.tensor(
-            output, device=self.device if self.device is not None else emissions.device
-        )
+        return torch.tensor(output, device=self.device)
 
     def decode(self, transition: Tensor, emissions: Tensor):
         batch_size, vertex_count, vocab_size = emissions.shape
@@ -48,4 +45,8 @@ class GreedyDAGStrategy(DAGStrategy):
 
         for i in range(batch_size):
             decoded.append(self.decode_single(transition[i], emissions[i]))
-        return torch.stack(decoded)
+
+        # an issue is that the length of the decoded sequences may vary
+        decoded = torch.nested.nested_tensor(decoded)
+        decoded = torch.nested.to_padded_tensor(decoded, padding=self.info.pad_idx)
+        return decoded
