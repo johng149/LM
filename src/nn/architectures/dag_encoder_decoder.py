@@ -268,6 +268,7 @@ class EncoderDecoderDAG(Architecture):
         dec_input_length = min(self.max_len_dec, seq_len_enc * coefficient)
         dec_input = torch.arange(0, dec_input_length, device=encoder_input.device)
         dec_input = dec_input.unsqueeze(0)
+        vertex_lens = torch.tensor([dec_input_length], device=encoder_input.device)
 
         len_enc_not_pad, is_enc_not_pad = process_tokens(encoder_input, strat.pad_id())
         enc_pad_mask = self_attn_pad_mask(is_enc_not_pad)
@@ -286,6 +287,7 @@ class EncoderDecoderDAG(Architecture):
             dec_input,
             dec_mask,
             enc_kv_dec_q_mask,
+            vertex_lens,
         )
 
         return strat.decode(transition, emission)
