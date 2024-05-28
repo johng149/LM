@@ -33,15 +33,18 @@
         "num_heads": 6,
         "factor": -1,
         "max_len_enc": 52,
-        "max_len_dec": 52,
+        "max_len_dec": 208,
         "num_enc_layers": 3,
         "num_dec_layers": 3,
+        "dag_heads": 6,
+        "dag_phm_factor": -1,
+        "dag_lm_head_factor": -1,
         "dropout": 0.12
     },
     "optimizer": "AdamW",
     "optimizer_kwargs": {
         "lr": 0.001
     },
-    "summary_writer_dir": "runs/wmt19_en_zh_seq2seq_dropout_0.12",
-    "checkpoint_path": "checkpoints/wmt19_en_zh_seq2seq_dropout_0.12/model.pt"
+    "summary_writer_dir": "runs/wmt19_en_zh_dag_dropout_0.12",
+    "checkpoint_path": "checkpoints/wmt19_en_zh_dag_dropout_0.12/model.pt"
 }
