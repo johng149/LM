@@ -25,7 +25,7 @@ def load(
     checkpoint_path: str,
     save_every: int,
     test_every: int,
-    optim_maker: lambda x: getattr(importlib.import_module("torch.optim"), x),
+    optim_maker=lambda x: getattr(importlib.import_module("torch.optim"), x),
 ):
 
     loss_fn = jd["loss_fn"]
@@ -67,20 +67,6 @@ def load(
     train_dl_params = jd["train_dl_params"]
     test_dl_params = jd.get("test_dl_params", None)
 
-    verifications, hasError = dataset_dl_args_validator(**train_dl_params)
-    if hasError:
-        raise ValueError(f"Invalid dataset train dataloader args: {verifications}")
-
-    if test_dl_params is not None:
-        verifications, hasError = dataset_dl_args_validator(**test_dl_params)
-        if hasError:
-            raise ValueError(f"Invalid dataset test dataloader args: {verifications}")
-
-    if model_type not in available_models:
-        raise ValueError(f"Invalid model type: {model_type}")
-
-    use_validation = jd.get("use_validation", False)
-
     if "coeff_fn" in train_dl_params:
         coeff_info = train_dl_params["coeff_fn"]
         coeff_type = coeff_info["type"]
@@ -94,6 +80,20 @@ def load(
         coeff_params = coeff_info["params"]
         coeff_fn = available_coeff_fns[coeff_type](**coeff_params)
         test_dl_params["coeff_fn"] = coeff_fn
+
+    verifications, hasError = dataset_dl_args_validator(**train_dl_params)
+    if hasError:
+        raise ValueError(f"Invalid dataset train dataloader args: {verifications}")
+
+    if test_dl_params is not None:
+        verifications, hasError = dataset_dl_args_validator(**test_dl_params)
+        if hasError:
+            raise ValueError(f"Invalid dataset test dataloader args: {verifications}")
+
+    if model_type not in available_models:
+        raise ValueError(f"Invalid model type: {model_type}")
+
+    use_validation = jd.get("use_validation", False)
 
     train_dl = model_type_to_processor_dataloader(dataset, model_type)(
         dataset_path=dataset_path, type=DataloaderType.TRAIN, **train_dl_params
