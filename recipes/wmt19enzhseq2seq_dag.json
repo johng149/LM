@@ -46,5 +46,6 @@
         "lr": 0.001
     },
     "summary_writer_dir": "runs/wmt19_en_zh_dag_dropout_0.12",
-    "checkpoint_path": "checkpoints/wmt19_en_zh_dag_dropout_0.12/model.pt"
+    "checkpoint_path": "checkpoints/wmt19_en_zh_dag_dropout_0.12/model.pt",
+    "clip_grad_norm": 0.1
 }

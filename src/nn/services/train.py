@@ -76,6 +76,7 @@ def train_step(
     save_every: Optional[int] = None,
     save_checkpoint_info_callback: Optional[Callable[[], dict]] = None,
     write_scaled_loss: bool = False,
+    clip_grad_norm: Optional[float] = None,
 ) -> float:
     optimizer.zero_grad()
     if isinstance(y, tuple) or isinstance(y, list):
@@ -91,6 +92,8 @@ def train_step(
     # yet the test fails when using the one-liner?
     loss = loss_fn(output, y)
     loss.backward()
+    if clip_grad_norm is not None:
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad_norm)
     optimizer.step()
     if writer is not None:
         writer.add_scalar(
@@ -163,6 +166,7 @@ def train(
     test_every: Optional[int] = None,
     device: Union[str, device] = "cpu",
     save_checkpoint_info_callback: Optional[Callable[[], dict]] = None,
+    clip_grad_norm: Optional[float] = None,
 ):
     """
     Trains given model for epochs equal to the difference between target and seen epochs.
@@ -183,6 +187,7 @@ def train(
         which will also be saved in the checkpoint file. This can be used to save additional
         information such as those needed to resume training from a checkpoint such
         as what dataset was used, the model type, etc.
+    @param clip_grad_norm: If not None, clip the gradient norm to this value
 
     It is assumed that the dataloaders used returns tuples or lists of tensors,
     and that the last element of the tuple or list is the target used in loss function.
@@ -218,6 +223,7 @@ def train(
                 epoch,
                 checkpoint_path,
                 save_every,
+                clip_grad_norm=clip_grad_norm,
             )
             if (
                 test_loader is not None

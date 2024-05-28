@@ -155,6 +155,7 @@ def load(
         save_every,
         test_every,
         device,
+        jd.get("clip_grad_norm", None),
     )
 
 
@@ -199,6 +200,7 @@ def entry(
         save_every,
         test_every,
         device,
+        clip_grad_norm,
     ) = entry_helper(jd_path, save_every, test_every, device, target_epochs)
     train(
         model=model,
@@ -213,4 +215,5 @@ def entry(
         save_every=save_every,
         test_every=test_every,
         device=device,
+        clip_grad_norm=clip_grad_norm,
     )
