@@ -14,6 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 import json
 import os
 import argparse
+from src.nn.utils.dag_coeff_fn import available_coeff_fns
 
 
 def load(
@@ -79,6 +80,20 @@ def load(
         raise ValueError(f"Invalid model type: {model_type}")
 
     use_validation = jd.get("use_validation", False)
+
+    if "coeff_fn" in train_dl_params:
+        coeff_info = train_dl_params["coeff_fn"]
+        coeff_type = coeff_info["type"]
+        coeff_params = coeff_info["params"]
+        coeff_fn = available_coeff_fns[coeff_type](**coeff_params)
+        train_dl_params["coeff_fn"] = coeff_fn
+
+    if test_dl_params is not None and "coeff_fn" in test_dl_params:
+        coeff_info = test_dl_params["coeff_fn"]
+        coeff_type = coeff_info["type"]
+        coeff_params = coeff_info["params"]
+        coeff_fn = available_coeff_fns[coeff_type](**coeff_params)
+        test_dl_params["coeff_fn"] = coeff_fn
 
     train_dl = model_type_to_processor_dataloader(dataset, model_type)(
         dataset_path=dataset_path, type=DataloaderType.TRAIN, **train_dl_params
