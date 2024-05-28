@@ -1,5 +1,6 @@
 import pytest
 import torch
+from torch import Tensor
 from src.nn.services.train import (
     move_to_device,
     save_checkpoint,
@@ -42,8 +43,55 @@ def test_move_to_device():
         MagicMock(to=MagicMock(return_value="mock_device")),
         MagicMock(to=MagicMock(return_value="mock_device")),
     ]
+    for d in data:
+        d.__class__ = Tensor
     moved = move_to_device(data, device)
     assert all([m == "mock_device" for m in moved])
+
+
+def test_move_to_device_nested():
+    device = "mock device"
+
+    data_list_mock1 = MagicMock(to=MagicMock(return_value="mock device"))
+    data_list_mock2 = MagicMock(to=MagicMock(return_value="mock device"))
+    data_tuple_mock1 = MagicMock(to=MagicMock(return_value="mock device"))
+    data_tuple_mock2 = MagicMock(to=MagicMock(return_value="mock device"))
+    data_mock1 = MagicMock(to=MagicMock(return_value="mock device"))
+
+    for d in [
+        data_list_mock1,
+        data_list_mock2,
+        data_tuple_mock1,
+        data_tuple_mock2,
+        data_mock1,
+    ]:
+        d.__class__ = Tensor
+
+    data = [
+        [
+            data_list_mock1,
+            data_list_mock2,
+        ],
+        (
+            data_tuple_mock1,
+            data_tuple_mock2,
+        ),
+        data_mock1,
+    ]
+
+    moved = move_to_device(data, device)
+
+    def check_moved(moved):
+        if isinstance(moved, list):
+            for m in moved:
+                check_moved(m)
+        elif isinstance(moved, tuple):
+            for m in moved:
+                check_moved(m)
+        else:
+            assert moved == "mock device"
+
+    check_moved(moved)
 
 
 @patch("src.nn.services.train.save_checkpoint")
@@ -152,7 +200,7 @@ def test_train(
     )
     assert mock_ensure_dir_exists.call_count == 1
     assert mock_ensure_dir_exists.call_args == mock.call(checkpoint_path)
-    assert mock_move_to_device.call_count == 9
+    assert mock_move_to_device.call_count == 27
     # 3 save checkpoints, 2 from the loop, 1 from
     # the finally block
     assert mock_save_checkpoint.call_count == 3

@@ -9,6 +9,7 @@ from torch import device
 from tqdm.auto import tqdm
 from torch import Tensor
 import os
+from typing import Tuple
 
 
 def ensure_dir_exists(path: str):
@@ -29,9 +30,9 @@ def move_to_device(data, device: Union[str, device]):
         or isinstance(data, dict)
     )
     if isinstance(data, list) or isinstance(data, tuple):
-        return [d.to(device) for d in data]
+        return [move_to_device(d, device) for d in data]
     elif isinstance(data, dict):
-        return {k: v.to(device) for k, v in data.items()}
+        return {k: move_to_device(v, device) for k, v in data.items()}
     else:
         return data.to(device)
 
@@ -68,7 +69,7 @@ def train_step(
     optimizer: Optimizer,
     loss_fn: Union[Callable, Module],
     x: Union[list, tuple, Tensor],
-    y: Tensor,
+    y: Union[Tensor, Tuple[Tensor, ...]],
     writer: Optional[SummaryWriter] = None,
     global_step: Optional[int] = None,
     checkpoint_path: Optional[str] = None,
@@ -77,7 +78,10 @@ def train_step(
     write_scaled_loss: bool = False,
 ) -> float:
     optimizer.zero_grad()
-    batch_size = y.size(0)
+    if isinstance(y, tuple) or isinstance(y, list):
+        batch_size = y[0].size(0)
+    else:
+        batch_size = y.size(0)
     if isinstance(x, list) or isinstance(x, tuple):
         output = model(*x)
     else:
@@ -114,13 +118,16 @@ def test_step(
     model: Architecture,
     loss_fn: Union[Callable, Module],
     x: Union[list, tuple, Tensor],
-    y: Tensor,
+    y: Union[Tensor, Tuple[Tensor, ...]],
     writer: Optional[SummaryWriter] = None,
     global_step: Optional[int] = None,
     write_scaled_loss: bool = False,
 ) -> float:
     with torch.no_grad():
-        batch_size = y.size(0)
+        if isinstance(y, tuple) or isinstance(y, list):
+            batch_size = y[0].size(0)
+        else:
+            batch_size = y.size(0)
         # output = model(*x if isinstance(x, list) or isinstance(x, tuple) else x)
         if isinstance(x, list) or isinstance(x, tuple):
             output = model(*x)
