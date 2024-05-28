@@ -242,7 +242,9 @@ class Processor:
         return None
 
     def supports_seq2seq_dag(self) -> bool:
-        return self.collate_seq2seq_dag_fn() is not None
+        # we use a dummy coeff_fn since this is just to check if the
+        # collate_seq2seq_dag_fn function is implemented
+        return self.collate_seq2seq_dag_fn(lambda: 1) is not None
 
     def format_dataset_path(self, dataset_path: str, type: DataloaderType) -> Path:
         dataset_path = Path(dataset_path)
