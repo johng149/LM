@@ -1,6 +1,7 @@
 from src.entry_point.services.entry import load, load_from_checkpoint
 from unittest.mock import MagicMock, patch
 from unittest import mock
+from src.common.models.dataloader_type import DataloaderType
 
 
 @patch("src.entry_point.services.entry.model_type_to_processor_dataloader")
@@ -86,6 +87,7 @@ def test_load(
 
     mock_model = MagicMock()
     mock_model.to.return_value = mock_model
+    mock_model.parameters.return_value = "some parameters"
     mock_model_fn = MagicMock()
     mock_model_fn.return_value = mock_model
     available_models_values = {
@@ -138,4 +140,105 @@ def test_load(
     assert mock_available_loss_fns.__getitem__.call_count == 1
     assert mock_available_loss_fns.__getitem__.call_args == mock.call(
         jd_values["loss_fn"]
+    )
+    assert mock_loss_fn.call_count == 1
+    assert mock_loss_fn.call_args == mock.call(mock_tokenizer)
+
+    assert mock_available_tokenizers.__getitem__.call_count == 1
+    assert mock_available_tokenizers.__getitem__.call_args == mock.call(
+        jd_values["tokenizer"]
+    )
+
+    assert mock_tokenizer_fn.call_count == 1
+    assert mock_tokenizer_fn.call_args == mock.call()
+
+    assert mock_available_datasets.__getitem__.call_count == 1
+    assert mock_available_datasets.__getitem__.call_args == mock.call(
+        jd_values["dataset"]
+    )
+
+    assert mock_dataset_fn.call_count == 1
+    assert mock_dataset_fn.call_args == mock.call(mock_tokenizer)
+
+    assert mock_dataset.process_verify_args.call_count == 1
+    assert mock_dataset.process_verify_args.call_args == mock.call(
+        **jd_values["dataset_process_params"]
+    )
+
+    assert mock_dataset.process.call_count == 1
+    assert mock_dataset.process.call_args == mock.call(
+        jd_values["dataset_path"], **jd_values["dataset_process_params"]
+    )
+
+    assert mock_model_type_to_processor_supports.call_count == 1
+    assert mock_model_type_to_processor_supports.call_args == mock.call(
+        mock_dataset, jd_values["model_type"]
+    )
+
+    assert mock_model_type_to_processor_verify_args.call_count == 1
+    assert mock_model_type_to_processor_verify_args.call_args == mock.call(
+        mock_dataset, jd_values["model_type"]
+    )
+
+    assert mock_dataset_dl_args_validator.call_count == 2
+    assert mock_dataset_dl_args_validator.call_args_list == [
+        mock.call(**jd_values["train_dl_params"]),
+        mock.call(**jd_values["test_dl_params"]),
+    ]
+
+    assert mock_available_models.__contains__.call_count == 1
+    assert mock_available_models.__contains__.call_args == mock.call(
+        jd_values["model_type"]
+    )
+    assert mock_available_models.__getitem__.call_count == 1
+    assert mock_available_models.__getitem__.call_args == mock.call(
+        jd_values["model_type"]
+    )
+    model_kwargs = jd_values["model_kwargs"]
+    model_kwargs["vocab_size"] = mock_tokenizer_vocab_size
+    assert mock_model_fn.call_count == 1
+    assert mock_model_fn.call_args == mock.call(**model_kwargs)
+    assert mock_model.to.call_count == 1
+    assert mock_model.to.call_args == mock.call(device)
+
+    assert jd.get.call_count == 3
+    assert jd.get.call_args_list == [
+        mock.call("test_dl_params", None),
+        mock.call("use_validation", False),
+        mock.call("checkpoint_path", None),
+    ]
+
+    assert mock_model_type_to_processor_dataloader.call_count == 2
+    assert mock_model_type_to_processor_dataloader.call_args_list == [
+        mock.call(
+            mock_dataset,
+            jd_values["model_type"],
+        ),
+        mock.call(
+            mock_dataset,
+            jd_values["model_type"],
+        ),
+    ]
+    assert mock_dl_fn.call_count == 2
+    assert mock_dl_fn.call_args_list == [
+        mock.call(
+            dataset_path=jd_values["dataset_path"],
+            type=DataloaderType.TRAIN,
+            **jd_values["train_dl_params"],
+        ),
+        mock.call(
+            dataset_path=jd_values["dataset_path"],
+            type=DataloaderType.VALIDATION,
+            **jd_values["test_dl_params"],
+        ),
+    ]
+
+    assert mock_summary_writer.call_count == 1
+    assert mock_summary_writer.call_args == mock.call(jd_values["summary_writer_dir"])
+
+    assert mock_optim_maker.call_count == 1
+    assert mock_optim_maker.call_args == mock.call(jd_values["optimizer"])
+    assert mock_optim_class.call_count == 1
+    assert mock_optim_class.call_args == mock.call(
+        mock_model.parameters(), **jd_values["optimizer_kwargs"]
     )
