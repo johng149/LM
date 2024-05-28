@@ -1,4 +1,4 @@
-from src.entry_point.services.entry import load, load_from_checkpoint
+from src.entry_point.services.entry import load
 from unittest.mock import MagicMock, patch
 from unittest import mock
 from src.common.models.dataloader_type import DataloaderType
