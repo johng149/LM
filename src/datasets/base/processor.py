@@ -213,7 +213,13 @@ class Processor:
         Callable[
             [Any, int, int, int],
             Tuple[
-                Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]
+                Tensor,
+                Tensor,
+                Tensor,
+                Tensor,
+                Tensor,
+                Tensor,
+                Tuple[Tensor, Tensor, Tensor],
             ],
         ]
     ]:
