@@ -259,14 +259,30 @@ class WMT19EnZhProcessor(Processor):
 
     def collate_seq2seq_dag_fn(self, coeff_fn: Callable[[], int]) -> Callable[
         [Any, int, int, int],
-        Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]],
+        Tuple[
+            Tensor,
+            Tensor,
+            Tensor,
+            Tensor,
+            Tensor,
+            Tensor,
+            Tuple[Tensor, Tensor, Tensor],
+        ],
     ]:
         def collate_fn(
             batch: List[dict],
             bos_idx: int,
             eos_idx: int,
             pad_idx: int,
-        ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+        ) -> Tuple[
+            Tensor,
+            Tensor,
+            Tensor,
+            Tensor,
+            Tensor,
+            Tensor,
+            Tuple[Tensor, Tensor, Tensor],
+        ]:
             bos_idx = torch.tensor([bos_idx], dtype=torch.long)
             eos_idx = torch.tensor([eos_idx], dtype=torch.long)
 
@@ -309,12 +325,15 @@ class WMT19EnZhProcessor(Processor):
             dec_pad_mask = self_attn_pad_mask(is_dec_not_pad)
             env_kv_dec_q_mask = cross_attn_pad_mask(is_enc_not_pad, is_dec_not_pad)
 
+            decoder_input[decoder_input == pad_idx] = 0
+
             return (
                 encoder_input,
                 enc_pad_mask,
                 decoder_input,
                 dec_pad_mask,
                 env_kv_dec_q_mask,
+                vertex_lens,
                 (vertex_lens, target_lens, target),
             )
 
